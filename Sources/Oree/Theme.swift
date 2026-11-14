@@ -8,6 +8,7 @@ enum Theme {
     }
     static let ground = adaptive(light: NSColor(red: 0.953, green: 0.953, blue: 0.961, alpha: 1),
                                  dark: NSColor(red: 0.075, green: 0.075, blue: 0.08, alpha: 1))
+    static let card = adaptive(light: .white, dark: NSColor(red: 0.115, green: 0.115, blue: 0.125, alpha: 1))
     /// What things are drawn in: near black by day, near white by night.
     /// Tints of it make the panels, hairlines and quieter text.
     static let ink = adaptive(light: NSColor(red: 0.06, green: 0.06, blue: 0.09, alpha: 1), dark: .white)
@@ -46,9 +47,12 @@ extension View {
         modifier(GlassSurface(shape: shape))
     }
 
-    /// The glass card every widget sits on.
+    /// The card every widget sits on. It is a plain surface, not glass:
+    /// on the flat ground there is nothing for glass to bend, and glass
+    /// casts a shadow of its own whenever the window is the active one.
     func card() -> some View {
-        glass(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Theme.hairline))
     }
 }
 

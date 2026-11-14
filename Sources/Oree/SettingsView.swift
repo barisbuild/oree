@@ -104,6 +104,7 @@ struct SettingsCard: View {
                     .id(page)
                 }
                 .scrollIndicators(.never)
+            .scrollBounceBehavior(.basedOnSize, axes: [.horizontal, .vertical])
             }
             .frame(width: 820, height: 540)
             .card()

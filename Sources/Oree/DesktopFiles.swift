@@ -115,6 +115,7 @@ struct PlacesBar: View {
             .padding(.vertical, 2)
         }
         .scrollIndicators(.never)
+            .scrollBounceBehavior(.basedOnSize, axes: [.horizontal, .vertical])
         .onAppear(perform: readDisks)
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didMountNotification)) { _ in readDisks() }
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didUnmountNotification)) { _ in readDisks() }

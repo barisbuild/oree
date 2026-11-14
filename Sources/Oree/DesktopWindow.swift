@@ -72,6 +72,18 @@ final class DesktopWindow: NSWindow {
         }
     }
 
+    /// A click anywhere but in a text field leaves no field with the caret.
+    /// Without this, the first click on the desktop makes the window active
+    /// and AppKit hands the caret to the task box, as if it had been clicked.
+    override func sendEvent(_ event: NSEvent) {
+        super.sendEvent(event)
+        guard event.type == .leftMouseDown, firstResponder is NSText else { return }
+        let hit = contentView?.hitTest(event.locationInWindow)
+        if !(hit is NSText || hit is NSTextField) {
+            makeFirstResponder(nil)
+        }
+    }
+
     // Borderless windows refuse key status by default; the composer needs it.
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }

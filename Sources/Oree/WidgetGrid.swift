@@ -13,11 +13,12 @@ struct WidgetGrid: View {
 
     var body: some View {
         GeometryReader { area in
+            let columns = columns(in: area.size)
             ScrollView {
                 LazyVGrid(
                     columns: Array(
                         repeating: GridItem(.flexible(), spacing: Self.gap),
-                        count: columns(in: area.size)
+                        count: columns
                     ),
                     spacing: Self.gap
                 ) {
@@ -31,22 +32,28 @@ struct WidgetGrid: View {
                     FocusWidget(timer: store.focus)
                 }
             }
+            // When every widget fits, the grid is not a thing that scrolls:
+            // a wheel over it moves nothing.
+            .scrollDisabled(fits(columns, in: area.size))
             .scrollIndicators(.never)
+            .scrollBounceBehavior(.basedOnSize, axes: [.horizontal, .vertical])
         }
     }
 
     /// How many widgets there are.
     private let count = 8
 
+    private func fits(_ columns: Int, in size: CGSize) -> Bool {
+        let rows = CGFloat((count + columns - 1) / columns)
+        return rows * widgetHeight + (rows - 1) * Self.gap <= size.height
+    }
+
     /// As few columns as let every widget fit without scrolling; when even
     /// the most the width allows cannot, that many, and the grid scrolls.
     private func columns(in size: CGSize) -> Int {
         let most = max(1, Int((size.width + Self.gap) / (260 + Self.gap)))
         for columns in min(3, most)...most {
-            let rows = CGFloat((count + columns - 1) / columns)
-            if rows * widgetHeight + (rows - 1) * Self.gap <= size.height {
-                return columns
-            }
+            if fits(columns, in: size) { return columns }
         }
         return most
     }

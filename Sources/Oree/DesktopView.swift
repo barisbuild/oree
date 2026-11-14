@@ -95,6 +95,7 @@ struct DesktopView: View {
                             }
                         }
                         .scrollIndicators(.never)
+            .scrollBounceBehavior(.basedOnSize, axes: [.horizontal, .vertical])
                     } else {
                         SearchResults(query: query, picked: $picked, frames: frames) { go(.folder([$0])) }
                     }
@@ -310,6 +311,7 @@ struct FolderBrowser: View {
                 }
             }
             .scrollIndicators(.never)
+            .scrollBounceBehavior(.basedOnSize, axes: [.horizontal, .vertical])
             .contextMenu {
                 Button("New Folder") {
                     if let made = folder.newFolder() { rename(made) }
@@ -681,6 +683,7 @@ private struct SearchResults: View {
             }
         }
         .scrollIndicators(.never)
+            .scrollBounceBehavior(.basedOnSize, axes: [.horizontal, .vertical])
         // Wait for a pause in the typing before asking.
         .task(id: query) {
             searching = true

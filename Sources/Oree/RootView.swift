@@ -168,7 +168,6 @@ struct Composer: View {
             AgentsButton(store: store, open: open)
                 .offset(y: -40)
         }
-        .onAppear { composing = true }
     }
 
     /// Which agent takes the task.
@@ -433,6 +432,7 @@ struct ChatView: View {
                     .padding(20)
                 }
                 .scrollIndicators(.never)
+            .scrollBounceBehavior(.basedOnSize, axes: [.horizontal, .vertical])
                 .onChange(of: session.entries.count) {
                     if let last = session.entries.last {
                         withAnimation(.smooth(duration: 0.25)) { proxy.scrollTo(last.id, anchor: .bottom) }
