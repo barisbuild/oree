@@ -1,0 +1,51 @@
+import SwiftUI
+
+enum Theme {
+    /// The ground every screen rests on, and the colour the hero sinks into.
+    static let groundRGB = SIMD3<Float>(0.075, 0.075, 0.08)
+    static let ground = Color(red: 0.075, green: 0.075, blue: 0.08)
+    static let panel = Color.white.opacity(0.07)
+    static let hairline = Color.white.opacity(0.1)
+    static let primary = Color.white.opacity(0.92)
+    static let secondary = Color.white.opacity(0.55)
+    static let accent = Color(red: 0.36, green: 0.56, blue: 1.0)
+}
+
+/// Liquid Glass where the system has it, a frosted material where it does not.
+private struct GlassSurface<S: Shape>: ViewModifier {
+    let shape: S
+
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, *) {
+            content.glassEffect(.regular, in: shape)
+        } else {
+            content
+                .background(.ultraThinMaterial, in: shape)
+                .overlay(shape.stroke(Theme.hairline))
+        }
+    }
+}
+
+extension View {
+    func glass(in shape: some Shape) -> some View {
+        modifier(GlassSurface(shape: shape))
+    }
+
+    /// The glass card every widget sits on.
+    func card() -> some View {
+        glass(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
+/// Glass shapes that touch inside a group flow into one another.
+struct GlassGroup<Content: View>: View {
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        if #available(macOS 26.0, *) {
+            GlassEffectContainer(spacing: 0) { content }
+        } else {
+            content
+        }
+    }
+}
