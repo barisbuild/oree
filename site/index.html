@@ -24,6 +24,7 @@
     <a href="#widgets">Widgets</a>
     <a href="#files">Files</a>
     <a href="#assistant">Assistant</a>
+    <a href="#picture">Picture</a>
     <a href="#questions">Questions</a>
   </nav>
   <a class="button small" href="https://github.com/barisbuild/oree">Get Oree</a>
@@ -31,232 +32,156 @@
 
 <main id="top">
 
-  <!-- The story, told by scrolling: the widgets float loose around the
-       headline, then come home onto a Mac's screen, and then it is yours
-       to try. -->
-  <section class="hero" aria-labelledby="headline">
-    <div class="scene">
-      <div class="copy">
-        <p class="pill"><i></i>Free and open source for macOS</p>
-        <h1 id="headline">Your desktop,<br>put to work.</h1>
-        <p class="sub">Oree takes the place of the macOS desktop. A picture, a box to ask for anything, and the things you check all day, already open.</p>
-        <div class="actions">
-          <a class="button" href="https://github.com/barisbuild/oree">Get Oree for Mac</a>
-          <a class="button ghost" href="#widgets">See what is on it</a>
+  <!-- The story, told by scrolling, inside a Mac's screen: the windows you
+       know, moved aside; the desktop behind them, no longer empty; and a
+       request, typed and answered. -->
+  <section class="hero" data-hero aria-labelledby="headline">
+    <div class="scene" data-scene-root data-act="0">
+
+      <div class="captions">
+        <div class="caption lead">
+          <h1 id="headline">Your desktop, put to work.</h1>
+          <p>Oree takes the place of the macOS desktop: a picture, a box to ask for anything, and the things you check all day, already open.</p>
+          <div class="actions">
+            <a class="button" href="https://github.com/barisbuild/oree">Get Oree for Mac</a>
+            <span class="scrollhint"><i></i>Scroll to see it happen</span>
+          </div>
         </div>
+        <div class="caption"><h2>It starts as the Mac you know.</h2><p>Calendar in one window, mail in another, music in a third.</p></div>
+        <div class="caption"><h2>Oree goes underneath.</h2><p>Move the windows aside, and the desktop is no longer empty.</p></div>
+        <div class="caption"><h2>Everything you check, already open.</h2><p>Files, calendar, reminders, mail, music, weather, batteries and a timer.</p></div>
+        <div class="caption"><h2>When something needs doing, ask.</h2><p>An agent goes to work on this Mac, and asks before it changes anything.</p></div>
       </div>
 
-      <div class="desk" data-desk data-view="widgets" aria-label="The Oree desktop">
-        <div class="screen" aria-hidden="true">
-          <canvas class="picture" data-picture></canvas>
-          <div class="menubar"><span></span>Finder<i>File</i><i>Edit</i><i>View</i></div>
-        </div>
+      <div class="mac" aria-label="A Mac's screen, with Oree as its desktop">
+        <div class="wallpaper" aria-hidden="true"></div>
+        <div class="night" aria-hidden="true"><canvas class="picture" data-picture></canvas></div>
 
-        <div class="composer piece" data-float="0.5,0.56,0">
-          <span class="prompt">Ask for anything on this Mac</span>
+        <div class="menubar" aria-hidden="true"><span></span><b>Finder</b><i>File</i><i>Edit</i><i>View</i><i>Go</i><em>Sat 14 Nov&ensp;9:41</em></div>
+
+        <div class="loose" data-loose aria-hidden="true"></div>
+
+        <div class="composer" aria-hidden="true">
+          <span class="prompt"><span data-ask>Ask for anything on this Mac</span><b></b></span>
           <div class="row">
             <span class="hint"><svg data-icon="cursor"></svg>Select files to ask about them</span>
             <span class="send"><svg data-icon="arrowUp"></svg></span>
           </div>
         </div>
 
-        <div class="grid">
-          <article class="w piece" data-float="0.12,0.3,-7">
-            <h3><svg data-icon="folder"></svg>Files<a>Show all folders</a></h3>
-            <ul class="rows">
-              <li><b class="fold"></b>Desktop<i>38</i></li>
-              <li><b class="fold"></b>Documents<i>29</i></li>
-              <li><b class="fold"></b>Downloads<i>14</i></li>
-              <li><b class="fold"></b>Pictures<i>6</i></li>
-            </ul>
-          </article>
-          <article class="w piece" data-float="0.88,0.27,6">
-            <h3><svg data-icon="calendar"></svg>Calendar<em>3</em></h3>
-            <ul class="rows events">
-              <li><b style="--c:#ff9f0a"></b>Design review<i>10:30</i></li>
-              <li><b style="--c:#5c8fff"></b>Lunch at the harbour<i>13:00</i></li>
-              <li><b style="--c:#30d158"></b>Flight to Lisbon<i>Tomorrow · 07:15</i></li>
-            </ul>
-          </article>
-          <article class="w piece" data-float="0.08,0.66,5">
-            <h3><svg data-icon="checklist"></svg>Reminders<em>3</em></h3>
-            <ul class="rows todo">
-              <li><b></b>Renew the passport<i>18 Nov</i></li>
-              <li><b></b>Send the invoice<i>20 Nov</i></li>
-              <li><b></b>Water the plants</li>
-            </ul>
-          </article>
-          <article class="w piece" data-float="0.92,0.64,-5">
-            <h3><svg data-icon="mail"></svg>Mail<em>2</em></h3>
-            <ul class="rows mail">
-              <li class="unread"><b></b>Your tickets for Friday<i>Box office</i></li>
-              <li class="unread"><b></b>Invoice 0142 is paid<i>Billing</i></li>
-              <li><b></b>Notes from Tuesday<i>Studio</i></li>
-              <li><b></b>The week in type<i>Newsletter</i></li>
-            </ul>
-          </article>
-          <article class="w piece" data-float="0.27,0.9,-4">
-            <h3><svg data-icon="music"></svg>Now playing</h3>
-            <div class="playing">
-              <span class="cover" aria-hidden="true"></span>
-              <div>
-                <strong>Low Tide</strong>
-                <small>Halden · Music</small>
-                <span class="controls"><svg data-icon="arrowLeft"></svg><b><svg data-icon="pause"></svg></b><svg data-icon="arrowRight"></svg></span>
-              </div>
-            </div>
-          </article>
-          <article class="w piece" data-float="0.73,0.91,5">
-            <h3><svg data-icon="sunCloud"></svg>Lisbon</h3>
-            <div class="weather">
-              <div class="now"><span><strong>18°</strong><small>Partly cloudy <i>H 20° L 14°</i></small></span><b><svg data-icon="sunCloud"></svg></b></div>
-              <ol>
-                <li>Today<svg data-icon="sunCloud"></svg><i>20° 14°</i></li>
-                <li>Sun<svg data-icon="sun"></svg><i>23° 15°</i></li>
-                <li>Mon<svg data-icon="rain"></svg><i>19° 13°</i></li>
-                <li>Tue<svg data-icon="cloud"></svg><i>18° 12°</i></li>
-              </ol>
-            </div>
-          </article>
-          <article class="w piece" data-float="0.3,0.14,4">
-            <h3><svg data-icon="battery"></svg>Batteries</h3>
-            <div class="rings">
-              <span class="ring charging" style="--level:71"><svg data-icon="laptop"></svg><svg data-icon="bolt"></svg></span>
-              <span class="ring" style="--level:92"><svg data-icon="earbuds"></svg></span>
-              <span class="ring" style="--level:64"><svg data-icon="earbudsCase"></svg></span>
-              <span class="ring" style="--level:38"><svg data-icon="keyboard"></svg></span>
-            </div>
-          </article>
-          <article class="w piece" data-float="0.7,0.13,-5">
-            <h3><svg data-icon="timer"></svg>Focus</h3>
-            <div class="focus">
-              <strong data-clock>25:00</strong>
-              <button type="button" data-focus aria-label="Start the focus timer"><svg data-icon="play"></svg></button>
-              <span class="bar"><i data-bar></i></span>
-            </div>
-          </article>
-        </div>
-
-        <div class="folder" aria-hidden="true">
-          <p><svg data-icon="arrowLeft"></svg>All folders (Desktop)</p>
-          <div class="icons" data-desk-icons></div>
-        </div>
+        <div class="grid" data-grid></div>
 
         <div class="talk" aria-hidden="true">
-          <p class="you">Tidy my Downloads into folders by month</p>
-          <p class="tool">Bash: ls -lt ~/Downloads</p>
-          <p class="tool">Allowed · mv ~/Downloads/*.pdf ~/Downloads/2026-11/</p>
-          <p>Done. 46 files are now in five folders, one for each month. Nothing was deleted.</p>
-          <span class="reply">Reply</span>
+          <p class="you" style="--at:0.5">Tidy my Downloads into folders by month</p>
+          <p class="tool" style="--at:0.6">Bash: ls -lt ~/Downloads</p>
+          <p class="ask" style="--at:0.7">mv ~/Downloads/*.pdf ~/Downloads/2026-11/ <i>Don’t allow</i><b>Allow</b></p>
+          <p style="--at:0.84">Done. 46 files are now in five folders, one for each month. Nothing was deleted.</p>
         </div>
+
+        <!-- The windows of an ordinary morning. -->
+        <div class="win cal" aria-hidden="true">
+          <div class="bar"><i></i><i></i><i></i><span>Calendar</span></div>
+          <div class="month" data-month></div>
+        </div>
+        <div class="win mailbox" aria-hidden="true">
+          <div class="bar"><i></i><i></i><i></i><span>Inbox</span></div>
+          <ul><li class="new"><b></b><span></span><em></em></li><li class="new"><b></b><span></span><em></em></li><li><b></b><span></span><em></em></li><li><b></b><span></span><em></em></li><li><b></b><span></span><em></em></li><li><b></b><span></span><em></em></li></ul>
+        </div>
+        <div class="win finder" aria-hidden="true">
+          <div class="bar"><i></i><i></i><i></i><span>Downloads</span></div>
+          <div class="tiles"><b></b><b class="doc"></b><b class="pic"></b><b></b><b class="doc"></b><b></b><b class="pic"></b><b class="doc"></b></div>
+        </div>
+        <div class="win music" aria-hidden="true">
+          <div class="bar"><i></i><i></i><i></i><span>Music</span></div>
+          <div class="deck"><b></b><div><strong></strong><span></span><em><i></i></em></div></div>
+        </div>
+
+        <div class="dock" aria-hidden="true"><i style="--c1:#5ac8fa;--c2:#0a84ff"></i><i style="--c1:#ffd60a;--c2:#ff9f0a"></i><i style="--c1:#63e6a0;--c2:#30d158"></i><i style="--c1:#ff8a80;--c2:#ff453a"></i><i style="--c1:#d9b3ff;--c2:#bf5af2"></i><i style="--c1:#f4f4f6;--c2:#c7c7cc"></i><i style="--c1:#8e9bff;--c2:#2f3bd9"></i><s></s><i style="--c1:#e5e5ea;--c2:#aeaeb2"></i></div>
       </div>
 
-      <div class="play">
-        <strong>Go on. Make it yours.</strong>
-        <div class="seg" role="group" aria-label="What the desktop shows">
-          <button type="button" data-view-set="widgets" aria-pressed="true">Widgets</button>
-          <button type="button" data-view-set="folder" aria-pressed="false">Open a folder</button>
-          <button type="button" data-view-set="talk" aria-pressed="false">Ask something</button>
-        </div>
-        <div class="seg" role="group" aria-label="The picture">
-          <button type="button" data-scene="dusk" aria-pressed="true">Dusk</button>
-          <button type="button" data-scene="fjord" aria-pressed="false">Fjord</button>
-          <button type="button" data-scene="dune" aria-pressed="false">Dune</button>
-          <button type="button" data-scene="mono" aria-pressed="false">Mono</button>
-        </div>
+      <div class="acts" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+    </div>
+  </section>
+
+  <section class="spot" id="widgets" aria-labelledby="spot-title">
+    <div class="head" data-reveal>
+      <p class="eyebrow">Widgets</p>
+      <h2 id="spot-title">Eight things you check.<br><span>One place to look.</span></h2>
+    </div>
+    <div class="spotlight" data-reveal>
+      <ul class="tabs" data-tabs aria-label="Widgets"></ul>
+      <div class="inset"><div class="showcase" data-showcase></div></div>
+    </div>
+  </section>
+
+  <section class="split" id="files" aria-labelledby="files-title">
+    <div class="words" data-reveal>
+      <p class="eyebrow">Files</p>
+      <h2 id="files-title">Still a desktop.<br><span>Go on, drag.</span></h2>
+      <p>Click an icon, Command-click a few, or drag a rectangle across the lot. Oree keeps the reflexes you already have.</p>
+      <ul class="points">
+        <li>Folders open in place, not in a window</li>
+        <li>Reorder, drop into folders, drag out to other apps</li>
+        <li>Stacks by kind, search, rename, compress</li>
+      </ul>
+    </div>
+    <div class="inset bleed" data-reveal style="--i:1">
+      <div class="app files" data-files aria-label="Try it: drag across the icons to select them">
+        <div class="bar"><span><svg data-icon="arrowLeft"></svg>All folders (Desktop)</span><span class="count" data-count>Drag to select</span></div>
+        <div class="icons" data-icons></div>
+        <i class="sweep" data-sweep></i>
+        <i class="pointer" data-pointer></i>
       </div>
     </div>
   </section>
 
-  <section class="intro" aria-labelledby="intro-title">
-    <h2 id="intro-title">One surface for the day.<br><span>No windows to arrange.</span></h2>
+  <section class="split flip" id="assistant" aria-labelledby="assistant-title">
+    <div class="words" data-reveal>
+      <p class="eyebrow">Assistant</p>
+      <h2 id="assistant-title">Ask the desktop.<br><span>It asks you back.</span></h2>
+      <p>Type what you need and an agent goes to work on this Mac. The answer opens over the desktop, picture and all.</p>
+      <ul class="points">
+        <li>Works through Claude Code or Codex, on your own account</li>
+        <li>Shows you each change before it is made</li>
+        <li>Keeps no keys and has no account of its own</li>
+      </ul>
+    </div>
+    <div class="inset bleed" data-reveal style="--i:1">
+      <div class="app chat" aria-label="An example conversation">
+        <canvas class="picture" data-picture aria-hidden="true"></canvas>
+        <div class="thread" data-thread></div>
+        <div class="reply"><span data-typing></span><b></b></div>
+      </div>
+    </div>
   </section>
 
-  <section class="cards">
-
-    <article class="card wide" id="widgets">
-      <header>
-        <span class="tile"><svg data-icon="activity"></svg></span><p class="label">Widgets</p>
-        <h3>Everything you check, already there.</h3>
-      </header>
-      <div class="inset">
-        <div class="stats">
-          <div><small>Widgets</small><strong>8</strong><em>all included</em></div>
-          <div><small>Accounts to make</small><strong>0</strong><em>none</em></div>
-          <div><small>Apps left open</small><strong>0</strong><em>reads your Mac</em></div>
-        </div>
-        <div class="table">
-          <p><svg data-icon="activity"></svg>On the desktop</p>
-          <ul>
-            <li><svg data-icon="folder"></svg>Files<i>Desktop and pinned folders, opened in place</i></li>
-            <li><svg data-icon="calendar"></svg>Calendar<i>Today and tomorrow</i></li>
-            <li><svg data-icon="checklist"></svg>Reminders<i>What is still open</i></li>
-            <li><svg data-icon="mail"></svg>Mail<i>Every inbox, newest first</i></li>
-            <li><svg data-icon="music"></svg>Now playing<i>Any app, with controls</i></li>
-            <li><svg data-icon="sunCloud"></svg>Weather<i>Now and four days</i></li>
-            <li><svg data-icon="battery"></svg>Batteries<i>Mac, earbuds, keyboard</i></li>
-            <li><svg data-icon="timer"></svg>Focus<i>25 minutes, one button</i></li>
-          </ul>
-        </div>
+  <section class="print" id="picture" aria-labelledby="picture-title">
+    <div class="head" data-reveal>
+      <p class="eyebrow">Picture</p>
+      <h2 id="picture-title">Any picture,<br><span>made of dots.</span></h2>
+      <p>Oree prints the image you choose as a grid of dots and lets it dissolve into the desktop, so picture and widgets read as one surface.</p>
+    </div>
+    <div class="plate" data-reveal style="--i:1">
+      <canvas class="picture" data-picture data-resolve aria-hidden="true"></canvas>
+      <div class="swatches" role="group" aria-label="Try a picture">
+        <button type="button" data-look="photo" aria-pressed="true">Lighthouse</button>
+        <button type="button" data-look="dusk" aria-pressed="false">Dusk</button>
+        <button type="button" data-look="fjord" aria-pressed="false">Fjord</button>
+        <button type="button" data-look="dune" aria-pressed="false">Dune</button>
+        <button type="button" data-look="mono" aria-pressed="false">Mono</button>
       </div>
-    </article>
-
-    <article class="card" id="files">
-      <header>
-        <span class="tile"><svg data-icon="folder"></svg></span><p class="label">Files</p>
-        <h3>Still a desktop. Go on, drag.</h3>
-        <p>Click, Command-click, or drag a rectangle across the lot. Reorder, drop into folders, drag out to other apps.</p>
-      </header>
-      <div class="inset bleed">
-        <div class="app files" data-files aria-label="Try it: drag across the icons to select them">
-          <div class="bar"><span><svg data-icon="arrowLeft"></svg>All folders (Desktop)</span><span class="count" data-count>Drag to select</span></div>
-          <div class="icons" data-icons></div>
-          <i class="sweep" data-sweep></i>
-        </div>
-      </div>
-    </article>
-
-    <article class="card" id="assistant">
-      <header>
-        <span class="tile"><svg data-icon="text"></svg></span><p class="label">Assistant</p>
-        <h3>Ask the desktop.</h3>
-        <p>An agent goes to work on this Mac, through Claude Code or Codex on your own account. It asks before it changes anything.</p>
-      </header>
-      <div class="inset bleed">
-        <div class="app chat" aria-label="An example conversation">
-          <canvas class="picture" data-picture aria-hidden="true"></canvas>
-          <div class="thread" data-thread></div>
-          <div class="reply"><span data-typing></span><b></b></div>
-        </div>
-      </div>
-    </article>
-
-    <article class="card wide split" id="picture">
-      <header>
-        <span class="tile"><svg data-icon="image"></svg></span><p class="label">Picture</p>
-        <h3>Any picture, made of dots.</h3>
-        <p>Choose any image. Oree prints it as a grid of dots and lets it dissolve into the desktop, so picture and widgets read as one surface.</p>
-        <div class="swatches" role="group" aria-label="Try a picture">
-          <button type="button" data-scene="dusk" aria-pressed="true">Dusk</button>
-          <button type="button" data-scene="fjord" aria-pressed="false">Fjord</button>
-          <button type="button" data-scene="dune" aria-pressed="false">Dune</button>
-          <button type="button" data-scene="mono" aria-pressed="false">Mono</button>
-        </div>
-      </header>
-      <div class="inset"><canvas class="picture" data-picture data-tall data-ground="light" aria-hidden="true"></canvas></div>
-    </article>
-
+    </div>
   </section>
 
   <section class="trio" aria-label="Privacy">
-    <div><span class="tile"><svg data-icon="laptop"></svg></span><h3>Stays on your Mac</h3><p>No account, no telemetry. The only thing that leaves is a location rounded to a kilometre, for the weather.</p></div>
-    <div><span class="tile"><svg data-icon="checkCircle"></svg></span><h3>Asks once</h3><p>macOS asks for calendar, reminders and location one time each. Full Disk Access is optional.</p></div>
-    <div><span class="tile"><svg data-icon="arrowLeft"></svg></span><h3>Easy to undo</h3><p>One button in Settings gives the desktop back to Finder and puts everything as it was.</p></div>
+    <div data-reveal><span class="tile"><svg data-icon="laptop"></svg></span><h3>Stays on your Mac</h3><p>No account, no telemetry. The only thing that leaves is a location rounded to a kilometre, for the weather.</p></div>
+    <div data-reveal style="--i:1"><span class="tile"><svg data-icon="checkCircle"></svg></span><h3>Asks once</h3><p>macOS asks for calendar, reminders and location one time each. Full Disk Access is optional.</p></div>
+    <div data-reveal style="--i:2"><span class="tile"><svg data-icon="arrowLeft"></svg></span><h3>Easy to undo</h3><p>One button in Settings gives the desktop back to Finder and puts everything as it was.</p></div>
   </section>
 
   <section class="faq" id="questions" aria-labelledby="faq-title">
-    <h2 id="faq-title">A few things<br>to know.</h2>
-    <div class="list">
+    <h2 id="faq-title" data-reveal>A few things<br><span>to know.</span></h2>
+    <div class="list" data-reveal style="--i:1">
       <details><summary>Does it replace Finder?</summary><p>No. Oree stands in for Finder's desktop, the layer behind your windows. Finder itself keeps running, your files stay where they are, and "Show in Finder" still opens Finder.</p></details>
       <details><summary>What does the assistant need?</summary><p>Claude Code or Codex installed and signed in on your Mac. Oree drives the one you choose and holds no keys of its own. Without either, the widgets and files still work.</p></details>
       <details><summary>Can the assistant change my files?</summary><p>Claude Code can, and it asks first: Oree shows you each request with Allow and Don't allow. Codex cannot ask, so Oree runs it read-only.</p></details>
@@ -266,7 +191,8 @@
     </div>
   </section>
 
-  <section class="closing">
+  <section class="closing" data-reveal>
+    <canvas class="picture" data-picture aria-hidden="true"></canvas>
     <h2>Make yourself at home.</h2>
     <p>Free, open source, and yours to change.</p>
     <a class="button" href="https://github.com/barisbuild/oree">Get Oree for Mac</a>
