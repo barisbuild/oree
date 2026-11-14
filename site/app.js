@@ -9,6 +9,8 @@ const ease = (t) => t * t * (3 - 2 * t);
 const wait = (ms) => new Promise((done) => setTimeout(done, ms));
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+/** Whether the page stands still: on a phone, or when motion is unwelcome. */
+const fixed = () => still || narrow.matches;
 
 const icon = (name) => `<svg data-icon="${name}"></svg>`;
 function drawIcons(root = document) {
@@ -105,76 +107,72 @@ $("[data-loose]").innerHTML = [
   `<i class="${kind}" style="--sx:${x}%;--sy:${y}%;--d:${(index * 0.055).toFixed(3)};--spin:${index % 2 ? 14 : -18}">${name}</i>`
 ).join("");
 
-// ---- Widgets, one at a time
+// ---- Widgets on a curve, turned by scrolling
 
-const tabs = $("[data-tabs]");
-const showcase = $("[data-showcase]");
-tabs.innerHTML = widgets.map((widget) =>
-  `<li tabindex="0" role="button">${icon(widget.icon)}<strong>${widget.name}</strong><small>${widget.line}</small></li>`
-).join("");
-showcase.append(...widgets.map(card));
-const tabItems = [...tabs.children];
-const showItems = [...showcase.children];
-let shown = -1;
-let watching = false;
+const round = $("[data-round]");
+const wheel = $("[data-wheel]");
+const about = $("[data-about]");
+wheel.append(...widgets.map(card));
+const wheelCards = [...wheel.children];
+let front = -1;
+/** Degrees of the curve between one card and the next. */
+const STEP = 26;
 
-function show(index) {
-  if (index === shown) return;
-  showItems[shown]?.classList.add("gone");
-  showItems[shown]?.classList.remove("on");
-  shown = index;
-  tabItems.forEach((tab, each) => {
-    tab.classList.toggle("on", each === index);
-    tab.classList.remove("timed");
+function turnWheel() {
+  if (fixed()) return;
+  const room = round.offsetHeight - innerHeight;
+  const p = clamp((scrollY - round.offsetTop) / room);
+  // The first card waits a moment in front, and so does the last.
+  const turn = ease(span(p, 0.06, 0.94)) * STEP * (widgets.length - 1);
+  wheel.style.setProperty("--turn", turn.toFixed(2));
+  wheelCards.forEach((element, index) => {
+    const away = Math.abs(index * STEP - turn);
+    element.style.setProperty("--near", clamp(1.2 - away / 70).toFixed(3));
   });
-  const next = showItems[index];
-  next.classList.remove("gone");
-  // Let the browser see it out of place first, so it travels in.
-  void next.offsetWidth;
-  next.classList.add("on");
-  if (watching && !still) {
-    void tabItems[index].offsetWidth;
-    tabItems[index].classList.add("timed");
+  const nearest = Math.round(turn / STEP);
+  if (nearest !== front) {
+    front = nearest;
+    $("strong", about).textContent = widgets[nearest].name;
+    $("span", about).textContent = widgets[nearest].line;
+    about.classList.remove("swap");
+    void about.offsetWidth;
+    about.classList.add("swap");
   }
 }
-
-tabItems.forEach((tab, index) => {
-  tab.addEventListener("click", () => show(index));
-  tab.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      show(index);
-    }
-  });
-  // Its time is up when the line under it has run its length.
-  tab.addEventListener("animationend", () => show((index + 1) % widgets.length));
-});
-show(0);
 
 drawIcons();
 
 // ---- The story in the hero, driven by how far the page has scrolled
+
+drawIcons();
 
 const hero = $("[data-hero]");
 const scene = $("[data-scene-root]");
 const asked = $("[data-ask]");
 const REQUEST = "Tidy my Downloads into folders by month";
 const PLACEHOLDER = asked.textContent;
-const fixed = () => still || narrow.matches;
+
+/** How far the screen starts below its place, and how much wider. */
+function measure() {
+  const mac = $(".mac");
+  const width = mac.offsetWidth;
+  scene.style.setProperty("--grow", Math.max(0, (innerWidth - 32) / width - 1).toFixed(4));
+  scene.style.setProperty("--drop", `${Math.round(scene.offsetHeight * 0.5 - 84)}px`);
+}
 
 let queued = false;
 function tell() {
   queued = false;
   if (fixed()) {
     // No story: the finished desktop, as the stylesheet sets it.
-    for (const name of ["--t1", "--t2", "--t3", "--t4", "--t5", "--lead"]) scene.style.removeProperty(name);
+    for (const name of ["--rise", "--t1", "--t2", "--t3", "--t4", "--t5"]) scene.style.removeProperty(name);
     scene.dataset.act = "0";
     return;
   }
   const p = clamp(scrollY / (hero.offsetHeight - innerHeight));
   const typed = span(p, 0.74, 0.97);
   const parts = {
-    "--lead": 1 - ease(span(p, 0.035, 0.115)),
+    "--rise": ease(span(p, 0, 0.11)),
     "--t1": ease(span(p, 0.24, 0.41)),
     "--t2": ease(span(p, 0.32, 0.5)),
     "--t3": ease(span(p, 0.38, 0.56)),
@@ -182,12 +180,13 @@ function tell() {
     "--t5": typed,
   };
   for (const [name, value] of Object.entries(parts)) scene.style.setProperty(name, value.toFixed(4));
-  scene.dataset.act = p < 0.07 ? "0" : p < 0.28 ? "1" : p < 0.5 ? "2" : p < 0.73 ? "3" : "4";
+  scene.dataset.act = p < 0.085 ? "0" : p < 0.28 ? "1" : p < 0.5 ? "2" : p < 0.73 ? "3" : "4";
 
   // The request is typed a letter at a time as the page moves.
   const letters = Math.round(REQUEST.length * span(typed, 0.04, 0.4));
   asked.textContent = letters ? REQUEST.slice(0, letters) : PLACEHOLDER;
   asked.parentElement.classList.toggle("typed", letters > 0);
+  turnWheel();
 }
 function queueTell() {
   if (!queued) {
@@ -196,14 +195,18 @@ function queueTell() {
   }
 }
 addEventListener("scroll", queueTell, { passive: true });
-addEventListener("resize", queueTell);
+addEventListener("resize", () => {
+  measure();
+  queueTell();
+});
 narrow.addEventListener("change", queueTell);
+measure();
 tell();
 
 // ---- Pictures: an image drawn small, then printed as dots that thin out
 // toward the foot, the way the app prints the picture you choose.
 
-const GROUND = [16, 16, 20];
+const GROUND = [243, 243, 246];
 const scenes = {
   dusk: { sky: ["#2b2440", "#c9785a", "#f0c08a"], sun: [0.68, 0.5, "#ffe2b0"], land: ["#6b4a5a", "#3f2f45", "#241d2e"] },
   fjord: { sky: ["#1d2b44", "#5f86a8", "#cfe0e6"], sun: [0.3, 0.42, "#f4fbff"], land: ["#4c6a82", "#2c435a", "#18283a"] },
@@ -558,14 +561,6 @@ for (const element of $$("[data-reveal]")) {
   }, { threshold: 0.18 });
   watcher.observe(element);
 }
-
-whenSeen($(".spotlight"), () => {
-  watching = true;
-  if (!still) tabItems[shown].classList.add("timed");
-}, () => {
-  watching = false;
-  tabItems[shown].classList.remove("timed");
-});
 
 whenSeen(files, () => {
   demonstrate.inView = true;
