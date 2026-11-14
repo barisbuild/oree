@@ -12,6 +12,72 @@ for (const svg of document.querySelectorAll("svg[data-icon]")) {
   svg.innerHTML = icons[svg.dataset.icon] ?? "";
 }
 
+// ---- Hero: the pieces float around the headline and come home on scroll
+
+const narrow = matchMedia("(max-width: 860px)");
+const hero = document.querySelector(".hero");
+const scene = document.querySelector(".scene");
+const copy = document.querySelector(".copy");
+const desk = document.querySelector("[data-desk]");
+const pieces = [...document.querySelectorAll(".piece")];
+const fixed = () => still || narrow.matches;
+
+/** Work out how far each piece is from where it floats around the headline. */
+function place() {
+  if (fixed()) return;
+  // Measure the pieces at home, with nothing moved.
+  scene.style.setProperty("--p", "1");
+  const view = scene.getBoundingClientRect();
+  for (const piece of pieces) {
+    const [x, y, tilt] = piece.dataset.float.split(",").map(Number);
+    const home = piece.getBoundingClientRect();
+    piece.style.setProperty("--dx", (view.left + view.width * x - (home.left + home.width / 2)).toFixed(1));
+    piece.style.setProperty("--dy", (view.top + view.height * y - (home.top + home.height / 2)).toFixed(1));
+    piece.style.setProperty("--r", tilt);
+  }
+}
+
+let queued = false;
+function settle() {
+  queued = false;
+  const room = hero.offsetHeight - innerHeight;
+  const progress = fixed() || room <= 0 ? 1 : clamp(scrollY / room);
+  scene.style.setProperty("--p", progress.toFixed(4));
+  copy.toggleAttribute("inert", progress > 0.25 && !fixed());
+}
+function queueSettle() {
+  if (!queued) {
+    queued = true;
+    requestAnimationFrame(settle);
+  }
+}
+addEventListener("scroll", queueSettle, { passive: true });
+addEventListener("resize", () => {
+  place();
+  queueSettle();
+});
+narrow.addEventListener("change", () => {
+  place();
+  queueSettle();
+});
+place();
+settle();
+// The fonts change the pieces' sizes when they arrive.
+document.fonts?.ready.then(() => {
+  place();
+  settle();
+});
+
+// What the desk shows: its widgets, an open folder, or a conversation.
+for (const button of document.querySelectorAll("[data-view-set]")) {
+  button.addEventListener("click", () => {
+    desk.dataset.view = button.dataset.viewSet;
+    for (const other of document.querySelectorAll("[data-view-set]")) {
+      other.setAttribute("aria-pressed", String(other === button));
+    }
+  });
+}
+
 // ---- Pictures: a scene drawn small, then printed as dots that thin out
 // toward the foot, the way the app prints the picture you choose.
 
@@ -23,7 +89,7 @@ const scenes = {
   dune: { sky: ["#3a2a20", "#d39a5c", "#f3d9a8"], sun: [0.5, 0.55, "#fff0cc"], land: ["#c98d54", "#96603a", "#5b3a26"] },
   mono: { sky: ["#2a2a2c", "#8e8e90", "#d6d6d4"], sun: [0.6, 0.46, "#ffffff"], land: ["#6c6c6e", "#434345", "#262628"] },
 };
-let scene = "dusk";
+let look = "dusk";
 
 /** The 8×8 ordered-dither threshold at a dot, in 0..1. */
 function threshold(x, y) {
@@ -77,6 +143,24 @@ function drawScene(context, width, height, look) {
   });
 }
 
+/** `hero.jpg` beside the page, once it has loaded; the drawn scenes until then. */
+let photo;
+const loading = new Image();
+loading.onload = () => {
+  photo = loading;
+  printAll();
+};
+loading.src = "hero.jpg";
+
+/** Fill the canvas with the photograph, cropped to cover it. */
+function drawPhoto(context, width, height) {
+  const scale = Math.max(width / photo.naturalWidth, height / photo.naturalHeight);
+  const w = photo.naturalWidth * scale;
+  const h = photo.naturalHeight * scale;
+  context.imageSmoothingQuality = "high";
+  context.drawImage(photo, (width - w) / 2, (height - h) * 0.3, w, h);
+}
+
 function print(canvas) {
   const cell = 3;
   const columns = Math.max(8, Math.round(canvas.clientWidth / cell));
@@ -85,7 +169,9 @@ function print(canvas) {
   canvas.width = columns;
   canvas.height = rows;
   const context = canvas.getContext("2d", { willReadFrequently: true });
-  drawScene(context, columns, rows, scenes[scene]);
+  // The photograph is the first picture; the others are drawn.
+  if (photo && look === "dusk") drawPhoto(context, columns, rows);
+  else drawScene(context, columns, rows, scenes[look]);
 
   // A tall picture keeps more of itself before it starts to thin.
   const thinFrom = "tall" in canvas.dataset ? 0.66 : 0.46;
@@ -133,9 +219,9 @@ printAll();
 
 for (const button of document.querySelectorAll("[data-scene]")) {
   button.addEventListener("click", () => {
-    scene = button.dataset.scene;
+    look = button.dataset.scene;
     for (const other of document.querySelectorAll("[data-scene]")) {
-      other.setAttribute("aria-pressed", String(other === button));
+      other.setAttribute("aria-pressed", String(other.dataset.scene === look));
     }
     printAll();
   });
@@ -194,6 +280,7 @@ for (const [name, kind] of names) {
   iconGrid.append(icon);
 }
 const fileIcons = [...iconGrid.children];
+document.querySelector("[data-desk-icons]").append(...fileIcons.slice(0, 14).map((icon) => icon.cloneNode(true)));
 
 function pick(area, keep = new Set()) {
   const box = files.getBoundingClientRect();

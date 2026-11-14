@@ -81,9 +81,39 @@ canvas.picture { display: block; width: 100%; image-rendering: pixelated; }
 .button.ghost { background: var(--panel); color: var(--ink); }
 .button.ghost:hover { background: #ebebee; box-shadow: none; }
 
-/* ---- Hero */
+/* ---- Hero: a story told by scrolling. --p runs 0 to 1 over it. */
 
-.hero { display: grid; justify-items: center; gap: 22px; width: var(--page); margin: 0 auto; padding: 72px 0 0; text-align: center; }
+.hero { position: relative; height: 300vh; }
+
+.scene {
+  position: sticky;
+  top: 64px;
+  height: calc(100vh - 64px);
+  display: grid;
+  grid-template-rows: 1fr auto;
+  justify-items: center;
+  align-items: center;
+  gap: 18px;
+  padding-bottom: 22px;
+  overflow: clip;
+}
+
+.copy {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 22px;
+  padding: 0 20px 6vh;
+  text-align: center;
+  opacity: calc(1 - var(--p, 0) * 3.4);
+  transform: translateY(calc(var(--p, 0) * -70px));
+  pointer-events: none;
+}
+.copy > * { pointer-events: auto; }
+.copy[inert] > * { pointer-events: none; }
 
 .pill { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 14px; border-radius: 999px; background: var(--blue-soft); color: var(--blue); font-size: 13.5px; font-weight: 500; }
 .pill i { width: 6px; height: 6px; border-radius: 50%; background: var(--blue); }
@@ -93,12 +123,12 @@ h1 { font-size: clamp(46px, 7.6vw, 96px); font-weight: 500; line-height: 0.98; l
 .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 4px; }
 
 /* A grey stage with a field of dots fading in at its foot. */
-.stage, .inset {
+.inset {
   position: relative;
   border-radius: 28px;
   background: var(--panel);
 }
-.stage::after, .inset::after {
+.inset::after {
   content: "";
   position: absolute;
   inset: auto 0 0;
@@ -110,36 +140,81 @@ h1 { font-size: clamp(46px, 7.6vw, 96px); font-weight: 500; line-height: 0.98; l
   pointer-events: none;
 }
 
-.stage { width: 100%; margin-top: 34px; padding: clamp(14px, 3.2vw, 44px); }
-
-/* ---- The app, drawn */
+/* ---- The app, drawn. Everything in it is sized from the desk's width. */
 
 .desk {
+  /* The screen arrives once the headline has gone. */
+  --frame: clamp(0, (var(--p, 0) - 0.32) * 3.4, 1);
   position: relative;
-  z-index: 1;
-  width: 100%;
+  width: min(1180px, 100vw - 40px, (100vh - 190px) * 1180 / 770);
   aspect-ratio: 1180 / 770;
-  border-radius: 16px;
-  background: var(--app);
+  container-type: inline-size;
   color: var(--app-text);
-  box-shadow: 0 1px 0 rgb(255 255 255 / 0.06) inset, 0 30px 80px rgb(20 20 50 / 0.28), 0 4px 14px rgb(20 20 50 / 0.12);
-  font-size: clamp(6px, 0.86vw, 11.6px);
   text-align: left;
-  overflow: hidden;
 }
-.desk > .picture { position: absolute; inset: 0 0 auto; height: 50%; }
+.desk > * { font-size: clamp(5px, 1cqw, 12px); }
 
-.menubar { position: absolute; inset: 0 0 auto; display: flex; align-items: center; gap: 1.4em; height: 2.5em; padding: 0 1.2em; font-size: 0.95em; font-weight: 500; color: rgba(255, 255, 255, 0.85); }
+.screen {
+  position: absolute;
+  inset: 0;
+  border-radius: 1.5em;
+  background: var(--app);
+  box-shadow: 0 30px 80px rgb(20 20 50 / 0.28), 0 4px 14px rgb(20 20 50 / 0.12);
+  overflow: hidden;
+  opacity: var(--frame);
+  transform: scale(calc(0.94 + var(--frame) * 0.06));
+}
+.screen .picture { height: 50%; }
+
+/* Each piece knows how far it starts from its place (--dx, --dy, worked out
+   from where it floats around the headline) and its tilt. */
+.piece {
+  --away: calc(1 - clamp(0, (var(--p, 0) - 0.06) * 1.9, 1));
+  transform:
+    translate(calc(var(--dx, 0) * var(--away) * 1px), calc(var(--dy, 0) * var(--away) * 1px))
+    rotate(calc(var(--r, 0) * var(--away) * 1deg))
+    scale(calc(1 + var(--away) * 0.1));
+  box-shadow: 0 1.6em 4em rgb(20 20 50 / calc(var(--away) * 0.3));
+  will-change: transform;
+}
+
+.menubar { position: absolute; inset: 0 0 auto; font-size: 1em; display: flex; align-items: center; gap: 1.4em; height: 2.5em; padding: 0 1.2em; font-size: 0.95em; font-weight: 500; color: rgba(255, 255, 255, 0.85); }
 .menubar span { width: 0.9em; height: 0.9em; border: 0.22em solid currentColor; border-radius: 50%; }
 .menubar i { font-style: normal; font-weight: 400; opacity: 0.75; }
 
-.composer { position: absolute; top: 36%; left: 27%; width: 46%; padding: 1.1em 1.2em; border: 1px solid var(--app-line); border-radius: 1.3em; background: rgb(38 38 42 / 0.82); backdrop-filter: blur(18px) saturate(1.4); }
+.composer { position: absolute; top: 36%; left: 27%; width: 46%; opacity: clamp(0, (var(--p, 0) - 0.3) * 5, 1); transition: opacity 0.3s ease; padding: 1.1em 1.2em; border: 1px solid var(--app-line); border-radius: 1.3em; background: rgb(38 38 42 / 0.82); backdrop-filter: blur(18px) saturate(1.4); }
 .prompt { display: block; margin-bottom: 1.5em; color: var(--app-soft); font-size: 1.08em; }
 .composer .row { display: flex; align-items: center; justify-content: space-between; color: var(--app-soft); }
 .hint { display: inline-flex; align-items: center; gap: 0.5em; }
 .send { display: grid; place-items: center; width: 2.1em; height: 2.1em; border-radius: 0.6em; background: rgba(255, 255, 255, 0.08); }
 
-.grid { position: absolute; inset: 51.5% 8% auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.9em; }
+.grid { position: absolute; inset: 51.5% 8% auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.9em; transition: opacity 0.3s ease; }
+
+/* The other things the desk can show: an open folder, a conversation. */
+.folder, .talk { position: absolute; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s; }
+.folder { inset: 50% 8% 4%; }
+.folder p { display: flex; align-items: center; gap: 0.5em; margin-bottom: 1.4em; color: var(--app-soft); font-weight: 500; }
+.folder .icons { grid-template-columns: repeat(9, 1fr); gap: 1.6em 0.4em; margin: 0; }
+.folder .icon { font-size: 0.92em; gap: 0.6em; }
+.folder .icon b { width: 4.8em; height: 4.8em; border-radius: 0.8em; }
+.folder .icon b::before { width: 3.6em; height: 2.8em; border-radius: 0.5em; box-shadow: 0 -0.4em 0 -0.1em #5aa9ee inset; }
+.folder .icon.doc b::before { width: 2.8em; height: 3.6em; box-shadow: none; }
+.folder .icon.pic b::before { width: 3.4em; height: 3.4em; box-shadow: 0 0 0 0.25em #f4f4f2 inset; }
+.folder .icon span { max-width: 7em; }
+.talk { inset: 0; display: flex; flex-direction: column; gap: 1.1em; padding: 5em 22% 2.4em; border-radius: 1.5em; background: rgb(19 19 20 / 0.7); font-size: clamp(5px, 1.08cqw, 13px); }
+.talk .you { align-self: flex-start; padding: 0.6em 1em; border: 1px solid var(--app-line); border-radius: 1em; background: rgb(38 38 42 / 0.85); }
+.talk .tool { font-family: var(--mono); font-size: 0.9em; color: var(--app-soft); }
+.talk .reply { position: static; height: auto; margin-top: auto; padding: 1em 1.2em; border-radius: 1.2em; color: var(--app-soft); font-size: 1em; }
+.desk[data-view="folder"] .grid, .desk[data-view="talk"] .grid, .desk[data-view="talk"] .composer { opacity: 0; pointer-events: none; }
+.desk[data-view="folder"] .folder, .desk[data-view="talk"] .talk { opacity: 1; visibility: visible; }
+
+/* The invitation under the screen. */
+.play { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 18px; opacity: clamp(0, (var(--p, 0) - 0.72) * 6, 1); }
+.play strong { font-size: 19px; font-weight: 500; letter-spacing: -0.02em; }
+.seg { display: inline-flex; padding: 4px; border-radius: 999px; background: var(--panel); }
+.seg button { height: 32px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; color: var(--soft); font: 500 14px var(--sans); cursor: pointer; transition: background 0.2s, color 0.2s; }
+.seg button:hover { color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--bg); color: var(--blue); box-shadow: 0 1px 3px rgb(20 20 50 / 0.12); }
 
 .w { display: flex; flex-direction: column; gap: 0.9em; height: 13.4em; padding: 1.1em; overflow: hidden; border: 1px solid var(--app-line); border-radius: 1.3em; background: var(--app-card); }
 .w h3 { display: flex; align-items: center; gap: 0.5em; font-size: 1em; font-weight: 500; letter-spacing: 0; }
@@ -314,12 +389,21 @@ footer a:hover { color: var(--ink); }
 
 @media (max-width: 860px) {
   .nav nav { display: none; }
-  .hero { padding-top: 48px; }
-  .stage { padding: 10px; border-radius: 22px; }
-  .desk { aspect-ratio: auto; padding: 46% 10px 10px; font-size: 10.5px; }
-  .desk > .picture { height: 240px; }
-  .composer { position: relative; top: auto; left: auto; width: auto; margin-bottom: 10px; }
+  .hero { height: auto; }
+  .scene { position: static; height: auto; display: grid; gap: 28px; padding: 48px 0 8px; overflow: visible; }
+  .copy { position: static; opacity: 1; transform: none; padding: 0 20px; }
+  .desk { --frame: 1; width: calc(100vw - 24px); aspect-ratio: auto; padding: 46% 10px 10px; }
+  .desk > * { font-size: 10.5px; }
+  .screen .picture { height: 240px; }
+  .piece { transform: none; box-shadow: none; }
+  .composer { position: relative; top: auto; left: auto; width: auto; margin-bottom: 10px; opacity: 1; }
   .grid { position: static; grid-template-columns: repeat(2, 1fr); }
+  .folder { position: static; display: none; }
+  .desk[data-view="folder"] .folder { display: block; }
+  .desk[data-view="folder"] .grid { display: none; }
+  .folder .icons { grid-template-columns: repeat(4, 1fr); }
+  .talk { padding: 4em 1.4em 1.4em; font-size: 12px; }
+  .play { opacity: 1; padding: 0 12px; }
   .cards, .trio, .faq, .card.split { grid-template-columns: 1fr; }
   .card.split .inset { min-height: 260px; }
   .intro { padding: 72px 0 36px; }
@@ -338,6 +422,12 @@ footer a:hover { color: var(--ink); }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  .hero { height: auto; }
+  .scene { position: static; height: auto; padding: 48px 0 24px; gap: 32px; }
+  .copy { position: static; opacity: 1; transform: none; }
+  .desk { --frame: 1; }
+  .piece { transform: none; box-shadow: none; }
+  .composer, .play { opacity: 1; }
   .ring.charging svg, .reply b { animation: none; }
   .ring.charging svg:last-child { opacity: 0; }
   .thread p, .button { transition: none; }

@@ -31,22 +31,28 @@
 
 <main id="top">
 
+  <!-- The story, told by scrolling: the widgets float loose around the
+       headline, then come home onto a Mac's screen, and then it is yours
+       to try. -->
   <section class="hero" aria-labelledby="headline">
-    <p class="pill"><i></i>Free and open source for macOS</p>
-    <h1 id="headline">Your desktop,<br>put to work.</h1>
-    <p class="sub">Oree takes the place of the macOS desktop. A picture, a box to ask for anything, and the things you check all day, already open.</p>
-    <div class="actions">
-      <a class="button" href="https://github.com/barisbuild/oree">Get Oree for Mac</a>
-      <a class="button ghost" href="#widgets">See what is on it</a>
-    </div>
+    <div class="scene">
+      <div class="copy">
+        <p class="pill"><i></i>Free and open source for macOS</p>
+        <h1 id="headline">Your desktop,<br>put to work.</h1>
+        <p class="sub">Oree takes the place of the macOS desktop. A picture, a box to ask for anything, and the things you check all day, already open.</p>
+        <div class="actions">
+          <a class="button" href="https://github.com/barisbuild/oree">Get Oree for Mac</a>
+          <a class="button ghost" href="#widgets">See what is on it</a>
+        </div>
+      </div>
 
-    <!-- The product itself, drawn live: the timer runs, the picture changes. -->
-    <div class="stage">
-      <div class="desk" aria-label="The Oree desktop">
-        <canvas class="picture" data-picture aria-hidden="true"></canvas>
-        <div class="menubar" aria-hidden="true"><span></span>Finder<i>File</i><i>Edit</i><i>View</i></div>
+      <div class="desk" data-desk data-view="widgets" aria-label="The Oree desktop">
+        <div class="screen" aria-hidden="true">
+          <canvas class="picture" data-picture></canvas>
+          <div class="menubar"><span></span>Finder<i>File</i><i>Edit</i><i>View</i></div>
+        </div>
 
-        <div class="composer">
+        <div class="composer piece" data-float="0.5,0.56,0">
           <span class="prompt">Ask for anything on this Mac</span>
           <div class="row">
             <span class="hint"><svg data-icon="cursor"></svg>Select files to ask about them</span>
@@ -55,7 +61,7 @@
         </div>
 
         <div class="grid">
-          <article class="w">
+          <article class="w piece" data-float="0.12,0.3,-7">
             <h3><svg data-icon="folder"></svg>Files<a>Show all folders</a></h3>
             <ul class="rows">
               <li><b class="fold"></b>Desktop<i>38</i></li>
@@ -64,7 +70,7 @@
               <li><b class="fold"></b>Pictures<i>6</i></li>
             </ul>
           </article>
-          <article class="w">
+          <article class="w piece" data-float="0.88,0.27,6">
             <h3><svg data-icon="calendar"></svg>Calendar<em>3</em></h3>
             <ul class="rows events">
               <li><b style="--c:#ff9f0a"></b>Design review<i>10:30</i></li>
@@ -72,7 +78,7 @@
               <li><b style="--c:#30d158"></b>Flight to Lisbon<i>Tomorrow · 07:15</i></li>
             </ul>
           </article>
-          <article class="w">
+          <article class="w piece" data-float="0.08,0.66,5">
             <h3><svg data-icon="checklist"></svg>Reminders<em>3</em></h3>
             <ul class="rows todo">
               <li><b></b>Renew the passport<i>18 Nov</i></li>
@@ -80,7 +86,7 @@
               <li><b></b>Water the plants</li>
             </ul>
           </article>
-          <article class="w">
+          <article class="w piece" data-float="0.92,0.64,-5">
             <h3><svg data-icon="mail"></svg>Mail<em>2</em></h3>
             <ul class="rows mail">
               <li class="unread"><b></b>Your tickets for Friday<i>Box office</i></li>
@@ -89,7 +95,7 @@
               <li><b></b>The week in type<i>Newsletter</i></li>
             </ul>
           </article>
-          <article class="w">
+          <article class="w piece" data-float="0.27,0.9,-4">
             <h3><svg data-icon="music"></svg>Now playing</h3>
             <div class="playing">
               <span class="cover" aria-hidden="true"></span>
@@ -100,7 +106,7 @@
               </div>
             </div>
           </article>
-          <article class="w">
+          <article class="w piece" data-float="0.73,0.91,5">
             <h3><svg data-icon="sunCloud"></svg>Lisbon</h3>
             <div class="weather">
               <div class="now"><span><strong>18°</strong><small>Partly cloudy <i>H 20° L 14°</i></small></span><b><svg data-icon="sunCloud"></svg></b></div>
@@ -112,7 +118,7 @@
               </ol>
             </div>
           </article>
-          <article class="w">
+          <article class="w piece" data-float="0.3,0.14,4">
             <h3><svg data-icon="battery"></svg>Batteries</h3>
             <div class="rings">
               <span class="ring charging" style="--level:71"><svg data-icon="laptop"></svg><svg data-icon="bolt"></svg></span>
@@ -121,7 +127,7 @@
               <span class="ring" style="--level:38"><svg data-icon="keyboard"></svg></span>
             </div>
           </article>
-          <article class="w">
+          <article class="w piece" data-float="0.7,0.13,-5">
             <h3><svg data-icon="timer"></svg>Focus</h3>
             <div class="focus">
               <strong data-clock>25:00</strong>
@@ -129,6 +135,34 @@
               <span class="bar"><i data-bar></i></span>
             </div>
           </article>
+        </div>
+
+        <div class="folder" aria-hidden="true">
+          <p><svg data-icon="arrowLeft"></svg>All folders (Desktop)</p>
+          <div class="icons" data-desk-icons></div>
+        </div>
+
+        <div class="talk" aria-hidden="true">
+          <p class="you">Tidy my Downloads into folders by month</p>
+          <p class="tool">Bash: ls -lt ~/Downloads</p>
+          <p class="tool">Allowed · mv ~/Downloads/*.pdf ~/Downloads/2026-11/</p>
+          <p>Done. 46 files are now in five folders, one for each month. Nothing was deleted.</p>
+          <span class="reply">Reply</span>
+        </div>
+      </div>
+
+      <div class="play">
+        <strong>Go on. Make it yours.</strong>
+        <div class="seg" role="group" aria-label="What the desktop shows">
+          <button type="button" data-view-set="widgets" aria-pressed="true">Widgets</button>
+          <button type="button" data-view-set="folder" aria-pressed="false">Open a folder</button>
+          <button type="button" data-view-set="talk" aria-pressed="false">Ask something</button>
+        </div>
+        <div class="seg" role="group" aria-label="The picture">
+          <button type="button" data-scene="dusk" aria-pressed="true">Dusk</button>
+          <button type="button" data-scene="fjord" aria-pressed="false">Fjord</button>
+          <button type="button" data-scene="dune" aria-pressed="false">Dune</button>
+          <button type="button" data-scene="mono" aria-pressed="false">Mono</button>
         </div>
       </div>
     </div>
