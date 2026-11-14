@@ -1,7 +1,6 @@
 import { icons } from "./icons.js";
 
 const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const narrow = matchMedia("(max-width: 860px)");
 const clamp = (value, low = 0, high = 1) => Math.min(high, Math.max(low, value));
 
 // ---- Icons
@@ -13,60 +12,11 @@ for (const svg of document.querySelectorAll("svg[data-icon]")) {
   svg.innerHTML = icons[svg.dataset.icon] ?? "";
 }
 
-// ---- Hero: the pieces start away from their places and come home on scroll
-
-const hero = document.querySelector(".hero");
-const stage = document.querySelector(".stage");
-const copy = document.querySelector(".copy");
-
-const pieces = [...document.querySelectorAll(".piece")];
-
-/** Work out how far each piece is from where it floats around the headline. */
-function place() {
-  // Measure the pieces at home, with nothing moved.
-  stage.style.setProperty("--p", "1");
-  const view = stage.getBoundingClientRect();
-  for (const piece of pieces) {
-    const [x, y, tilt] = piece.dataset.float.split(",").map(Number);
-    const home = piece.getBoundingClientRect();
-    piece.style.setProperty("--dx", (view.left + view.width * x - (home.left + home.width / 2)).toFixed(1));
-    piece.style.setProperty("--dy", (view.top + view.height * y - (home.top + home.height / 2)).toFixed(1));
-    piece.style.setProperty("--r", tilt);
-  }
-}
-
-let queued = false;
-function settle() {
-  queued = false;
-  const room = hero.offsetHeight - innerHeight;
-  const progress = still || narrow.matches || room <= 0 ? 1 : clamp(scrollY / room);
-  stage.style.setProperty("--p", progress.toFixed(4));
-  copy.toggleAttribute("inert", progress > 0.35 && !still && !narrow.matches);
-}
-function queueSettle() {
-  if (!queued) {
-    queued = true;
-    requestAnimationFrame(settle);
-  }
-}
-addEventListener("scroll", queueSettle, { passive: true });
-addEventListener("resize", () => {
-  place();
-  queueSettle();
-});
-narrow.addEventListener("change", queueSettle);
-place();
-settle();
-// The fonts change the pieces' sizes when they arrive.
-document.fonts?.ready.then(() => {
-  place();
-  settle();
-});
-
 // ---- Pictures: a scene drawn small, then printed as dots that thin out
 // toward the foot, the way the app prints the picture you choose.
 
-const GROUND = [16, 16, 17];
+/** What a picture sinks into: the dark app, or the light page. */
+const GROUNDS = { dark: [19, 19, 20], light: [244, 244, 245] };
 const scenes = {
   dusk: { sky: ["#2b2440", "#c9785a", "#f0c08a"], sun: [0.68, 0.5, "#ffe2b0"], land: ["#6b4a5a", "#3f2f45", "#241d2e"] },
   fjord: { sky: ["#1d2b44", "#5f86a8", "#cfe0e6"], sun: [0.3, 0.42, "#f4fbff"], land: ["#4c6a82", "#2c435a", "#18283a"] },
@@ -140,6 +90,7 @@ function print(canvas) {
   // A tall picture keeps more of itself before it starts to thin.
   const thinFrom = "tall" in canvas.dataset ? 0.66 : 0.46;
   const shadeFrom = "tall" in canvas.dataset ? 0.5 : 0.3;
+  const GROUND = GROUNDS[canvas.dataset.ground ?? "dark"];
   const image = context.getImageData(0, 0, columns, rows);
   const pixels = image.data;
   for (let y = 0; y < rows; y++) {
@@ -305,8 +256,8 @@ files.addEventListener("pointerdown", (down) => {
 function demonstrate() {
   if (touched || still) return;
   const box = files.getBoundingClientRect();
-  const from = { x: box.width * 0.04, y: 58 };
-  const to = { x: box.width * 0.66, y: box.height * 0.62 };
+  const from = { x: box.width * 0.04, y: 52 };
+  const to = { x: box.width * 0.7, y: box.height * 0.6 };
   const began = performance.now();
   const step = (now) => {
     if (touched) return showSweep(null);

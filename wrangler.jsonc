@@ -1,0 +1,13 @@
+{
+  // The oree.space site: static files served by Cloudflare (Pages is now
+  // part of Workers). Deploy with: npx wrangler deploy
+  "name": "oree-space",
+  "compatibility_date": "2026-10-23",
+  "assets": { "directory": "./site", "not_found_handling": "404-page", "html_handling": "auto-trailing-slash" },
+  "routes": [
+    { "pattern": "oree.space", "custom_domain": true },
+    { "pattern": "www.oree.space", "custom_domain": true }
+  ],
+  "workers_dev": true,
+  "preview_urls": false
+}
