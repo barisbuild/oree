@@ -44,7 +44,6 @@ struct Onboarding: View {
             }
             .frame(maxWidth: 560)
         }
-        .preferredColorScheme(.dark)
         // It is still a desktop: dragging across it draws the selection
         // rectangle, though there is nothing here to pick yet.
         .modifier(Sweep(picked: .constant([]), frames: frames))
@@ -89,10 +88,10 @@ private struct Prominent: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.callout.weight(.semibold))
-            .foregroundStyle(.black)
+            .foregroundStyle(Theme.ground)
             .padding(.horizontal, 18)
             .padding(.vertical, 9)
-            .background(.white.opacity(configuration.isPressed ? 0.75 : 0.95), in: Capsule())
+            .background(Theme.ink.opacity(configuration.isPressed ? 0.75 : 0.95), in: Capsule())
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.smooth(duration: 0.15), value: configuration.isPressed)
     }
@@ -113,6 +112,7 @@ private struct DotField: View {
         TimelineView(.animation(paused: settled)) { moment in
             let elapsed = moment.date.timeIntervalSince(began)
             Canvas { context, size in
+                let ink = Theme.ink
                 let centre = CGPoint(x: size.width / 2, y: size.height / 2)
                 let reach = hypot(size.width, size.height) / 2
                 // The wave's front, easing out as it nears the corners.
@@ -132,7 +132,7 @@ private struct DotField: View {
                         let radius = 1.1 + 1.5 * crest
                         context.fill(
                             Path(ellipseIn: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2)),
-                            with: .color(.white.opacity(light))
+                            with: .color(ink.opacity(light))
                         )
                     }
                 }
@@ -244,7 +244,7 @@ private struct Choice<Trailing: View>: View {
             .glass(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(.white.opacity(chosen ? 0.7 : 0), lineWidth: 1.5)
+                    .strokeBorder(Theme.ink.opacity(chosen ? 0.7 : 0), lineWidth: 1.5)
             )
             .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
@@ -260,12 +260,12 @@ private struct Check: View {
     var body: some View {
         ZStack {
             Circle()
-                .strokeBorder(.white.opacity(isOn ? 0 : 0.3), lineWidth: 1.5)
+                .strokeBorder(Theme.ink.opacity(isOn ? 0 : 0.3), lineWidth: 1.5)
             if isOn {
-                Circle().fill(.white.opacity(0.95))
+                Circle().fill(Theme.ink.opacity(0.95))
                 Image(systemName: "checkmark")
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.black)
+                    .foregroundStyle(Theme.ground)
             }
         }
         .frame(width: 22, height: 22)

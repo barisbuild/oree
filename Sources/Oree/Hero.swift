@@ -9,6 +9,7 @@ import SwiftUI
 struct HeroView: View {
     let imageURL: URL?
     @State private var rendered: CGImage?
+    @Environment(\.colorScheme) private var scheme
 
     /// The size of one dot of the grid, in points.
     private static let cell: CGFloat = 3
@@ -22,13 +23,14 @@ struct HeroView: View {
                         .resizable()
                 }
             }
-            .task(id: RenderKey(url: imageURL, size: geometry.size)) {
+            .task(id: RenderKey(url: imageURL, size: geometry.size, dark: scheme == .dark)) {
                 let columns = Int(geometry.size.width / Self.cell)
                 let rows = Int(geometry.size.height / Self.cell)
                 let url = imageURL
+                let dark = scheme == .dark
                 rendered = await Task.detached(priority: .userInitiated) {
                     guard let url, let source = Dither.load(url) else { return nil }
-                    return Dither.render(source, columns: columns, rows: rows)
+                    return Dither.render(source, columns: columns, rows: rows, dark: dark)
                 }.value
             }
         }
@@ -37,6 +39,7 @@ struct HeroView: View {
     private struct RenderKey: Equatable {
         let url: URL?
         let size: CGSize
+        let dark: Bool
     }
 }
 
@@ -49,8 +52,6 @@ enum Dither {
     private static let levels: Float = 5
     /// How much of the grain shows over the smooth picture.
     private static let grain: Float = 0.45
-    /// The picture is brought down to sit in a dark interface.
-    private static let dim: Float = 0.82
 
     static func load(_ url: URL, maxPixel: Int = 2400) -> CGImage? {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
@@ -84,7 +85,7 @@ enum Dither {
     }
 
     /// One pixel per dot; the view scales it up with hard edges.
-    static func render(_ source: CGImage, columns: Int, rows: Int) -> CGImage? {
+    static func render(_ source: CGImage, columns: Int, rows: Int, dark: Bool) -> CGImage? {
         guard columns > 0, rows > 0,
               let context = CGContext(
                   data: nil,
@@ -111,7 +112,9 @@ enum Dither {
 
         guard let data = context.data else { return nil }
         let pixels = data.bindMemory(to: UInt8.self, capacity: columns * rows * 4)
-        let ground = Theme.groundRGB
+        let ground = Theme.groundRGB(dark: dark)
+        // By night the picture is brought down to sit in a dark interface.
+        let dim: Float = dark ? 0.82 : 1
 
         for y in 0..<rows {
             let down = Float(y) / Float(max(1, rows - 1))

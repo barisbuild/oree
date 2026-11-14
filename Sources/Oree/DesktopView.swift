@@ -507,7 +507,7 @@ private struct FileCell: View {
         VStack(spacing: 6) {
             FileIcon(url: url, size: 56)
                 .padding(6)
-                .background(isPicked ? Color.white.opacity(0.12) : .clear, in: RoundedRectangle(cornerRadius: 8))
+                .background(isPicked ? Theme.ink.opacity(0.12) : .clear, in: RoundedRectangle(cornerRadius: 8))
                 .overlay(alignment: .topTrailing) {
                     if let badge {
                         Text("\(badge)")

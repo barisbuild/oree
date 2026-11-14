@@ -51,7 +51,6 @@ final class DesktopWindow: NSWindow {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Theme.ground)
                 .foregroundStyle(Theme.primary)
-                .preferredColorScheme(.dark)
                 .ignoresSafeArea()
         )
         // The window is the size of its display, whatever the content would

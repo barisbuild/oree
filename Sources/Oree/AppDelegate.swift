@@ -38,6 +38,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.mainMenu = Self.makeMenu()
         Snapshot.install()
+        // For checking both looks without changing the system's:
+        // `defaults write space.oree.app debugAppearance light` (or dark).
+        if let forced = UserDefaults.standard.string(forKey: "debugAppearance") {
+            NSApp.appearance = NSAppearance(named: forced == "light" ? .aqua : .darkAqua)
+        }
         store.keepFresh()
         arrangeWindows()
         NotificationCenter.default.addObserver(

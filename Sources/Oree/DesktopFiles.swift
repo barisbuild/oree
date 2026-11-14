@@ -40,8 +40,8 @@ struct Sweep: ViewModifier {
             .overlay {
                 if let area {
                     Rectangle()
-                        .fill(Color.white.opacity(0.12))
-                        .overlay(Rectangle().strokeBorder(Color.white.opacity(0.55)))
+                        .fill(Theme.ink.opacity(0.12))
+                        .overlay(Rectangle().strokeBorder(Theme.ink.opacity(0.55)))
                         .frame(width: area.width, height: area.height)
                         .position(x: area.midX, y: area.midY)
                         .allowsHitTesting(false)

@@ -147,10 +147,10 @@ struct SettingsCard: View {
             Button("Done", action: done)
                 .buttonStyle(.plain)
                 .font(.callout.weight(.semibold))
-                .foregroundStyle(.black)
+                .foregroundStyle(Theme.ground)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 7)
-                .background(.white.opacity(0.95), in: Capsule())
+                .background(Theme.ink.opacity(0.95), in: Capsule())
                 .keyboardShortcut(.cancelAction)
                 .padding(.horizontal, 10)
         }
@@ -195,7 +195,7 @@ private struct Panel<Content: View>: View {
             VStack(spacing: 0) {
                 content
             }
-            .background(Color.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(Theme.ink.opacity(0.045), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.hairline))
         }
         .padding(.bottom, 18)
@@ -269,7 +269,7 @@ private struct Badge: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
             .background(
-                (tone == .good ? Color.green : tone == .warn ? .orange : .white).opacity(0.12),
+                (tone == .good ? Color.green : tone == .warn ? .orange : Theme.ink).opacity(0.12),
                 in: Capsule()
             )
     }

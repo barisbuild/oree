@@ -1,14 +1,29 @@
+import AppKit
 import SwiftUI
 
 enum Theme {
     /// The ground every screen rests on, and the colour the hero sinks into.
-    static let groundRGB = SIMD3<Float>(0.075, 0.075, 0.08)
-    static let ground = Color(red: 0.075, green: 0.075, blue: 0.08)
-    static let panel = Color.white.opacity(0.07)
-    static let hairline = Color.white.opacity(0.1)
-    static let primary = Color.white.opacity(0.92)
-    static let secondary = Color.white.opacity(0.55)
-    static let accent = Color(red: 0.36, green: 0.56, blue: 1.0)
+    static func groundRGB(dark: Bool) -> SIMD3<Float> {
+        dark ? SIMD3(0.075, 0.075, 0.08) : SIMD3(0.953, 0.953, 0.961)
+    }
+    static let ground = adaptive(light: NSColor(red: 0.953, green: 0.953, blue: 0.961, alpha: 1),
+                                 dark: NSColor(red: 0.075, green: 0.075, blue: 0.08, alpha: 1))
+    /// What things are drawn in: near black by day, near white by night.
+    /// Tints of it make the panels, hairlines and quieter text.
+    static let ink = adaptive(light: NSColor(red: 0.06, green: 0.06, blue: 0.09, alpha: 1), dark: .white)
+    static let panel = ink.opacity(0.07)
+    static let hairline = ink.opacity(0.1)
+    static let primary = ink.opacity(0.92)
+    static let secondary = ink.opacity(0.55)
+    static let accent = adaptive(light: NSColor(red: 0.18, green: 0.23, blue: 0.85, alpha: 1),
+                                 dark: NSColor(red: 0.36, green: 0.56, blue: 1.0, alpha: 1))
+
+    /// A colour that follows the system's appearance.
+    private static func adaptive(light: NSColor, dark: NSColor) -> Color {
+        Color(nsColor: NSColor(name: nil) { appearance in
+            appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light
+        })
+    }
 }
 
 /// Liquid Glass where the system has it, a frosted material where it does not.
