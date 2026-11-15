@@ -92,21 +92,6 @@ function card(widget, index) {
 
 $("[data-grid]").append(...widgets.map(card));
 
-// ---- The Mac's own furniture: a month of calendar, files left on the desktop
-
-$("[data-month]").innerHTML = Array.from({ length: 35 }, (_, cell) => {
-  const day = ((cell + 26) % 30) + 1;
-  const event = { 9: "#dfe3ff", 11: "#ffe2c2", 16: "#d6f5df", 18: "#dfe3ff", 24: "#ffe2c2" }[cell];
-  return `<i>${day}${event ? `<u style="--c:${event}"></u>` : ""}</i>`;
-}).join("");
-
-$("[data-loose]").innerHTML = [
-  ["Brand", "", 91, 12], ["Invoice", "doc", 96.4, 12], ["Harbour", "pic", 91, 24], ["Notes", "doc", 96.4, 24],
-  ["Trip", "", 91, 36], ["Poster", "pic", 96.4, 36], ["Budget", "doc", 96.4, 48], ["Archive", "", 91, 48],
-].map(([name, kind, x, y], index) =>
-  `<i class="${kind}" style="--sx:${x}%;--sy:${y}%;--d:${(index * 0.055).toFixed(3)};--spin:${index % 2 ? 14 : -18}">${name}</i>`
-).join("");
-
 // ---- Widgets on a curve, turned by scrolling
 
 const round = $("[data-round]");
@@ -142,45 +127,42 @@ function turnWheel() {
 
 drawIcons();
 
-// ---- The story in the hero, driven by how far the page has scrolled
-
-drawIcons();
+// ---- The hero: the parts arrive in turn, then scrolling tells the story
 
 const hero = $("[data-hero]");
 const scene = $("[data-scene-root]");
+const lead = $(".lead");
+const mac = $(".mac");
 const asked = $("[data-ask]");
 const REQUEST = "Tidy my Downloads into folders by month";
 const PLACEHOLDER = asked.textContent;
 
-/** How far the screen starts below its place, and how much wider. */
+/** How big the screen ends, and how far up, when it has come to fill the view. */
 function measure() {
-  const mac = $(".mac");
+  scene.style.setProperty("--lead-h", `${lead.offsetHeight}px`);
+  if (fixed()) return;
   const width = mac.offsetWidth;
-  scene.style.setProperty("--grow", Math.max(0, (innerWidth - 32) / width - 1).toFixed(4));
-  scene.style.setProperty("--drop", `${Math.round(scene.offsetHeight * 0.5 - 84)}px`);
+  const room = scene.offsetHeight - 24 - 72;
+  const full = Math.min(1320, innerWidth - 32, room * 1.6);
+  scene.style.setProperty("--grow", Math.max(0, full / width - 1).toFixed(4));
+  scene.style.setProperty("--lift", `${16 - mac.offsetTop}px`);
 }
 
 let queued = false;
 function tell() {
   queued = false;
   if (fixed()) {
-    // No story: the finished desktop, as the stylesheet sets it.
-    for (const name of ["--rise", "--t1", "--t2", "--t3", "--t4", "--t5"]) scene.style.removeProperty(name);
-    scene.dataset.act = "0";
+    for (const name of ["--g", "--t5", "--play"]) scene.style.removeProperty(name);
     return;
   }
   const p = clamp(scrollY / (hero.offsetHeight - innerHeight));
-  const typed = span(p, 0.74, 0.97);
-  const parts = {
-    "--rise": ease(span(p, 0, 0.11)),
-    "--t1": ease(span(p, 0.24, 0.41)),
-    "--t2": ease(span(p, 0.32, 0.5)),
-    "--t3": ease(span(p, 0.38, 0.56)),
-    "--t4": ease(span(p, 0.48, 0.7)),
-    "--t5": typed,
-  };
-  for (const [name, value] of Object.entries(parts)) scene.style.setProperty(name, value.toFixed(4));
-  scene.dataset.act = p < 0.085 ? "0" : p < 0.28 ? "1" : p < 0.5 ? "2" : p < 0.73 ? "3" : "4";
+  const typed = span(p, 0.36, 0.82);
+  scene.style.setProperty("--g", ease(span(p, 0, 0.3)).toFixed(4));
+  scene.style.setProperty("--t5", typed.toFixed(4));
+  const play = ease(span(p, 0.86, 0.97));
+  scene.style.setProperty("--play", play.toFixed(4));
+  scene.classList.toggle("inviting", play > 0.5);
+  lead.toggleAttribute("inert", p > 0.12);
 
   // The request is typed a letter at a time as the page moves.
   const letters = Math.round(REQUEST.length * span(typed, 0.04, 0.4));
@@ -199,9 +181,10 @@ addEventListener("resize", () => {
   measure();
   queueTell();
 });
-narrow.addEventListener("change", queueTell);
-measure();
-tell();
+narrow.addEventListener("change", () => {
+  measure();
+  queueTell();
+});
 
 // ---- Pictures: an image drawn small, then printed as dots that thin out
 // toward the foot, the way the app prints the picture you choose.
@@ -316,15 +299,17 @@ function print(canvas, cell = 3) {
 
 const pictures = $$("[data-picture]");
 const plate = $("[data-resolve]");
+measure();
+tell();
 const printAll = () => pictures.forEach((canvas) => print(canvas));
 
-/** Print the plate coarse, then finer and finer, as if coming into focus. */
-async function resolve() {
-  if (still) return print(plate);
-  const run = (resolve.run = (resolve.run ?? 0) + 1);
+/** Print a picture coarse, then finer and finer, as if coming into focus. */
+async function resolve(canvas = plate) {
+  if (still) return print(canvas);
+  const run = (canvas.run = (canvas.run ?? 0) + 1);
   for (const cell of [34, 24, 16, 11, 7, 5, 3]) {
-    if (resolve.run !== run) return;
-    print(plate, cell);
+    if (canvas.run !== run) return;
+    print(canvas, cell);
     await wait(85);
   }
 }
@@ -336,19 +321,38 @@ addEventListener("resize", () => {
 });
 printAll();
 
+// The page waits for the photograph and the type, then arrives in turn:
+// the words, the screen, the picture printing into focus, the task box,
+// the widgets.
 const loading = new Image();
-loading.onload = () => {
-  photo = loading;
-  printAll();
-};
+const photoReady = new Promise((done) => {
+  loading.onload = () => {
+    photo = loading;
+    done();
+  };
+  loading.onerror = done;
+});
 loading.src = "hero.jpg";
+Promise.all([photoReady, document.fonts?.ready]).then(async () => {
+  measure();
+  tell();
+  printAll();
+  const heroPicture = $("[data-hero-picture]");
+  const blank = heroPicture.getContext("2d");
+  blank.clearRect(0, 0, heroPicture.width, heroPicture.height);
+  requestAnimationFrame(() => scene.classList.add("on"));
+  await wait(still ? 0 : 650);
+  resolve(heroPicture);
+});
 
 for (const button of $$("[data-look]")) {
   button.addEventListener("click", () => {
     look = button.dataset.look;
-    for (const other of $$("[data-look]")) other.setAttribute("aria-pressed", String(other === button));
-    pictures.filter((canvas) => canvas !== plate).forEach((canvas) => print(canvas));
-    resolve();
+    for (const other of $$("[data-look]")) other.setAttribute("aria-pressed", String(other.dataset.look === look));
+    const heroPicture = $("[data-hero-picture]");
+    pictures.filter((canvas) => canvas !== plate && canvas !== heroPicture).forEach((canvas) => print(canvas));
+    resolve(heroPicture);
+    resolve(plate);
   });
 }
 
