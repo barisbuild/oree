@@ -137,9 +137,8 @@ drawIcons();
 //   0.36–0.46  what it picked gathers, a small pile for each widget
 //   0.44–0.72  each pile opens into its widget, one after another
 //   0.50–0.62  the task box arrives
-//   0.60–0.70  a second sweep holds the widgets
-//   0.64–0.84  the picture prints in, the screen forms round it all
-//   0.86–0.96  the last word
+//   0.60–0.74  the picture prints in, the screen forms round it all
+// Then the desktop fills the window, the last word over it for a moment.
 
 const section = $("[data-sw]");
 const scene = $("[data-scene]");
@@ -148,7 +147,6 @@ const desk = $("[data-desk]");
 const box = $("[data-box]");
 const rect = $("[data-rect]");
 const cursor = $("[data-cursor]");
-const closing = $("[data-close]");
 const deck = $("[data-cards]");
 const heroPicture = $("[data-hero-picture]");
 
@@ -187,7 +185,6 @@ drawIcons(deck);
 let size = { w: 1, h: 1 };
 let homes = [];
 let piles = [];
-let deckBox = { x: 0, y: 0, w: 0, h: 0 };
 
 /** Where things rest, in the scene's own pixels. */
 function measure() {
@@ -205,16 +202,12 @@ function measure() {
     const middle = own.reduce((sum, file) => ({ x: sum.x + file.x * size.w / own.length, y: sum.y + file.y * size.h / own.length }), { x: 0, y: 0 });
     return { x: mix(middle.x, homes[index].x, 0.45), y: mix(middle.y, homes[index].y, 0.45) };
   });
-  const all = deck.getBoundingClientRect();
-  deckBox = { x: all.left - sceneBox.left, y: all.top - sceneBox.top, w: all.width, h: all.height };
 }
 
 /** Where the heroPointer is at `p`, and the corner it is dragging from, if any. */
 function heroPointer(p) {
   const A = { x: 0.05 * size.w, y: 0.07 * size.h };
   const B = { x: 0.96 * size.w, y: 0.93 * size.h };
-  const C = { x: deckBox.x - 26, y: deckBox.y - 22 };
-  const D = { x: deckBox.x + deckBox.w + 26, y: deckBox.y + deckBox.h + 22 };
   // A hand does not drag in a straight line: a slight bow.
   const along = (from, to, t, bow) => ({
     x: mix(from.x, to.x, t) + Math.sin(t * Math.PI) * bow,
@@ -223,9 +216,7 @@ function heroPointer(p) {
   if (p < 0.06) return { at: A };
   if (p < 0.32) return { at: along(A, B, ease(span(p, 0.06, 0.32)), 40), from: A };
   if (p < 0.36) return { at: B, from: A, letGo: span(p, 0.32, 0.36) };
-  if (p < 0.6) return { at: along(B, C, ease(span(p, 0.36, 0.6)), -60) };
-  if (p < 0.7) return { at: along(C, D, ease(span(p, 0.6, 0.7)), 24), from: C };
-  return { at: D, from: C, letGo: span(p, 0.7, 0.74) };
+  return { at: B };
 }
 
 const inside = (point, area) => point.x >= area.x && point.x <= area.x + area.w && point.y >= area.y && point.y <= area.y + area.h;
@@ -260,7 +251,7 @@ function tell() {
   // The heroPointer, and the rectangle it draws.
   const { at, from, letGo = 0 } = heroPointer(p);
   cursor.style.transform = `translate(${at.x.toFixed(1)}px, ${at.y.toFixed(1)}px)`;
-  cursor.style.setProperty("--seen", (1 - ease(span(p, 0.72, 0.78))).toFixed(3));
+  cursor.style.setProperty("--seen", (1 - ease(span(p, 0.36, 0.42))).toFixed(3));
   scene.classList.toggle("moving", p > 0.06);
   let area = null;
   if (from) {
@@ -300,23 +291,16 @@ function tell() {
     const scale = piles[index] ? mix(0.16, 1, k) : mix(0.9, 1, k);
     element.style.transform = `translate(${((start.x - home.x) * (1 - k)).toFixed(1)}px, ${((start.y - home.y) * (1 - k)).toFixed(1)}px) scale(${scale.toFixed(3)})`;
     element.style.opacity = clamp(opened[index] * 2.4).toFixed(3);
-    // The second sweep: what its rectangle touches is held, outlined.
-    const held = p >= 0.6 && p < 0.74 && area && inside(home, area);
-    element.classList.toggle("swept", Boolean(held));
   });
 
-  // The task box, the picture, the screen round it all, the last word.
+  // The task box, the picture, the screen round it all.
   const boxIn = settleInto(span(p, 0.5, 0.62));
-  const last = ease(span(p, 0.86, 0.96));
-  box.style.opacity = (clamp(boxIn) * (1 - last * 0.88)).toFixed(3);
+  box.style.opacity = clamp(boxIn).toFixed(3);
   box.style.transform = `translateY(${((1 - boxIn) * 18).toFixed(1)}px)`;
-  deck.style.opacity = (1 - last * 0.88).toFixed(3);
-  deck.style.filter = `blur(${(last * 3).toFixed(2)}px)`;
-  desk.style.setProperty("--photo", ease(span(p, 0.64, 0.78)).toFixed(3));
-  desk.style.setProperty("--frame", ease(span(p, 0.7, 0.84)).toFixed(3));
-  closing.style.opacity = last.toFixed(3);
-  closing.style.transform = `translateY(${((1 - last) * 24).toFixed(1)}px)`;
-  closing.style.filter = `blur(${((1 - last) * 8).toFixed(2)}px)`;
+  deck.style.opacity = "";
+  deck.style.filter = "";
+  desk.style.setProperty("--photo", ease(span(p, 0.6, 0.7)).toFixed(3));
+  desk.style.setProperty("--frame", ease(span(p, 0.62, 0.74)).toFixed(3));
 
   // The picture is heroPrinted into focus as it appears, once.
   if (p > 0.62 && !heroPrinted) {
@@ -333,12 +317,12 @@ function queueTell() {
 }
 addEventListener("scroll", turnWheel, { passive: true });
 
-// The story plays once, slowly, from a moment after the page appears.
+// The story plays once, from a moment after the page appears.
 const PLAY_DELAY = 300;
-// The first sweep (p 0 to 0.36) is quick so nobody waits on it; the rest
-// (p 0.36 to 1) takes its time.
-const SWEEP_LENGTH = 2600;
-const REST_LENGTH = 9600;
+// The sweep (p 0 to 0.36), then the widgets and the picture (to END).
+const SWEEP_LENGTH = 2000;
+const REST_LENGTH = 4300;
+const END = 0.74;
 let heroP = 0;
 function play() {
   let started = null;
@@ -349,11 +333,16 @@ function play() {
     last = now;
     started ??= now;
     const elapsed = Math.max(0, now - started - PLAY_DELAY);
-    heroP = elapsed < SWEEP_LENGTH ? 0.36 * elapsed / SWEEP_LENGTH : 0.36 + 0.64 * clamp((elapsed - SWEEP_LENGTH) / REST_LENGTH);
+    heroP = elapsed < SWEEP_LENGTH ? 0.36 * elapsed / SWEEP_LENGTH : 0.36 + (END - 0.36) * clamp((elapsed - SWEEP_LENGTH) / REST_LENGTH);
     tell();
-    if (heroP < 1) requestAnimationFrame(frame);
-    // Half a second after the last word, the desktop takes the screen.
-    else setTimeout(() => scene.classList.add("full"), 500);
+    if (heroP < END) {
+      requestAnimationFrame(frame);
+      return;
+    }
+    // Once the last widget is in place the desktop takes the screen, with
+    // the last word over it for a moment.
+    scene.classList.add("full", "said");
+    setTimeout(() => scene.classList.remove("said"), 1100);
   };
   requestAnimationFrame(frame);
 }
