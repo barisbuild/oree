@@ -35,6 +35,8 @@ final class AgentSession: Identifiable {
         let id = UUID()
         let kind: Kind
         let text: String
+        /// When it arrived, so a new answer can be shown arriving.
+        let at = Date()
     }
 
     /// A tool call the agent may not make until the user says so.

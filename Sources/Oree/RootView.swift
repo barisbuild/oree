@@ -120,54 +120,87 @@ struct Composer: View {
     let picked: Set<URL>
     let open: (AgentSession) -> Void
     @State private var draft = ""
+    /// Files added with the plus button, beside any picked on the desktop.
+    @State private var attached: [URL] = []
     @FocusState private var composing: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            TextField("Task", text: $draft, prompt: Text(""), axis: .vertical)
-                .textFieldStyle(.plain)
-                .font(.body)
-                .lineLimit(2...6)
-                .focused($composing)
-                .onSubmit(send)
-                // The system dims its own prompt too far to read on glass.
-                .overlay(alignment: .topLeading) {
-                    if draft.isEmpty {
-                        Text("Ask for anything on this Mac")
-                            .foregroundStyle(Theme.secondary)
-                            .allowsHitTesting(false)
-                    }
-                }
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .bottom, spacing: 8) {
+                RoundButton(symbol: "plus", help: "Add files to ask about", action: addFiles)
 
-            HStack(spacing: 8) {
-                IconLabel(
-                    picked.isEmpty
-                        ? "Select files to ask about them"
-                        : "\(picked.count) selected \(picked.count == 1 ? "item" : "items")",
-                    picked.isEmpty ? .cursor : .checkCircle
-                )
-                .font(.callout)
-                .foregroundStyle(Theme.secondary)
-                Spacer()
-                if store.preferences.agents.count > 1 {
-                    agentMenu
-                }
+                TextField("Task", text: $draft, prompt: Text(""), axis: .vertical)
+                    .textFieldStyle(.plain)
+                    .font(.body)
+                    .lineLimit(1...6)
+                    .focused($composing)
+                    .onSubmit(send)
+                    // The system dims its own prompt too far to read on glass.
+                    .overlay(alignment: .topLeading) {
+                        if draft.isEmpty {
+                            Text("Ask for anything on this Mac")
+                                .foregroundStyle(Theme.secondary)
+                                .allowsHitTesting(false)
+                        }
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 4)
+
+                agentMenu
+                    .padding(.bottom, 8)
+
+                RoundButton(symbol: "mic", help: "Dictate", outlined: true, action: dictate)
+
                 Button(action: send) {
-                    IconView(.arrowUp, size: 15)
+                    IconView(.arrowUp, size: 16)
                         .foregroundStyle(canSend ? Color.white : Theme.secondary)
-                        .frame(width: 28, height: 28)
+                        .frame(width: 34, height: 34)
                         .glass(tinted: canSend ? Theme.accent : nil, in: Circle())
                 }
                 .buttonStyle(.plain)
                 .disabled(!canSend)
                 .help("Start an agent on this task")
             }
+            .padding(7)
+            .glass(in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+
+            IconLabel(
+                about.isEmpty
+                    ? "Select files to ask about them"
+                    : "\(about.count) selected \(about.count == 1 ? "item" : "items")",
+                about.isEmpty ? .cursor : .checkCircle
+            )
+            .font(.callout)
+            .foregroundStyle(Theme.secondary)
+            .padding(.horizontal, 12)
         }
-        .padding(14)
-        .glass(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(alignment: .topTrailing) {
             AgentsButton(store: store, open: open)
                 .offset(y: -40)
+        }
+    }
+
+    /// What the task is about: the files picked on the desktop and any
+    /// added with the plus button.
+    private var about: [URL] {
+        Array(picked.union(attached)).sorted { $0.path < $1.path }
+    }
+
+    private func addFiles() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = true
+        panel.prompt = "Add"
+        if panel.runModal() == .OK {
+            attached += panel.urls.filter { !attached.contains($0) }
+        }
+    }
+
+    /// The system's own dictation, into the task field.
+    private func dictate() {
+        composing = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            NSApp.sendAction(Selector(("startDictation:")), to: nil, from: nil)
         }
     }
 
@@ -203,8 +236,33 @@ struct Composer: View {
 
     private func send() {
         guard canSend else { return }
-        open(store.start(task, about: picked.sorted { $0.path < $1.path }))
+        open(store.start(task, about: about))
         draft = ""
+        attached = []
+    }
+}
+
+/// A round control beside the task field.
+private struct RoundButton: View {
+    let symbol: String
+    let help: String
+    var outlined = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(Theme.primary)
+                .frame(width: 34, height: 34)
+                .background(outlined ? Color.clear : Theme.panel, in: Circle())
+                .overlay {
+                    if outlined { Circle().strokeBorder(Theme.hairline) }
+                }
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .help(help)
     }
 }
 
@@ -423,9 +481,16 @@ struct ChatView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 14) {
-                        ForEach(session.entries) { entry in
-                            EntryView(entry: entry)
-                                .id(entry.id)
+                        ForEach(blocks) { block in
+                            Group {
+                                switch block {
+                                case .entry(let entry):
+                                    EntryView(entry: entry)
+                                case .tools(let tools):
+                                    ToolTrace(tools: tools, running: block.id == blocks.last?.id && session.state != .idle && session.state != .ended)
+                                }
+                            }
+                            .id(block.id)
                         }
                     }
                     .frame(maxWidth: Self.column, alignment: .leading)
@@ -435,7 +500,7 @@ struct ChatView: View {
                 .scrollIndicators(.never)
             .scrollBounceBehavior(.basedOnSize, axes: [.horizontal, .vertical])
                 .onChange(of: session.entries.count) {
-                    if let last = session.entries.last {
+                    if let last = blocks.last {
                         withAnimation(.smooth(duration: 0.25)) { proxy.scrollTo(last.id, anchor: .bottom) }
                     }
                 }
@@ -451,6 +516,14 @@ struct ChatView: View {
                 .card()
                 .frame(maxWidth: Self.column)
                 .padding(.horizontal, 20)
+            }
+
+            if session.state == .working {
+                ThinkingIndicator(label: "Thinking")
+                    .frame(maxWidth: Self.column, alignment: .leading)
+                    .padding(.horizontal, 34)
+                    .padding(.top, 10)
+                    .transition(.opacity)
             }
 
             TextField("Reply", text: $draft, prompt: Text(""), axis: .vertical)
@@ -475,6 +548,36 @@ struct ChatView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.ground.opacity(0.66))
         .onAppear { composing = true }
+    }
+
+    /// The conversation as it is drawn: what was said, one by one, and the
+    /// tools run in between folded together.
+    private enum Block: Identifiable {
+        case entry(AgentSession.Entry)
+        case tools([AgentSession.Entry])
+
+        var id: UUID {
+            switch self {
+            case .entry(let entry): entry.id
+            case .tools(let tools): tools[0].id
+            }
+        }
+    }
+
+    private var blocks: [Block] {
+        var blocks: [Block] = []
+        for entry in session.entries {
+            if entry.kind == .tool {
+                if case .tools(let tools) = blocks.last {
+                    blocks[blocks.count - 1] = .tools(tools + [entry])
+                } else {
+                    blocks.append(.tools([entry]))
+                }
+            } else {
+                blocks.append(.entry(entry))
+            }
+        }
+        return blocks
     }
 
     private var status: String {
@@ -518,7 +621,7 @@ struct EntryView: View {
                 .padding(.vertical, 8)
                 .glass(in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         case .assistant:
-            Text(Self.styled(entry.text))
+            StreamingText(text: Self.styled(entry.text), since: entry.at)
                 .textSelection(.enabled)
         case .tool:
             Text(entry.text)
