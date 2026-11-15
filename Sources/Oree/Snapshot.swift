@@ -89,6 +89,7 @@ enum Snapshot {
         let onlyThisWindow: UInt32 = 1 << 3
         let nominalResolution: UInt32 = 1 << 4
         let windows = NSApp.windows.filter { $0 is DesktopWindow }.sorted { $0.frame.minX < $1.frame.minX }
+            + NSApp.windows.filter { $0 is CoverWindow && $0.isVisible }
         for (index, window) in windows.enumerated() {
             guard let image = capture(.null, onlyThisWindow, UInt32(window.windowNumber), nominalResolution)?
                 .takeRetainedValue() else { continue }

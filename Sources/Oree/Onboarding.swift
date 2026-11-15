@@ -59,7 +59,7 @@ struct Onboarding: View {
             HStack(spacing: 6) {
                 ForEach(Step.allCases.dropFirst(), id: \.self) { each in
                     Capsule()
-                        .fill(each == step ? Theme.primary : Theme.panel)
+                        .fill(each == step ? Theme.accent : Theme.panel)
                         .frame(width: each == step ? 18 : 6, height: 6)
                 }
             }
@@ -88,10 +88,10 @@ private struct Prominent: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.callout.weight(.semibold))
-            .foregroundStyle(Theme.ground)
+            .foregroundStyle(.white)
             .padding(.horizontal, 18)
             .padding(.vertical, 9)
-            .background(Theme.ink.opacity(configuration.isPressed ? 0.75 : 0.95), in: Capsule())
+            .background(Theme.accent.opacity(configuration.isPressed ? 0.8 : 1), in: Capsule())
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.smooth(duration: 0.15), value: configuration.isPressed)
     }
@@ -112,7 +112,7 @@ private struct DotField: View {
         TimelineView(.animation(paused: settled)) { moment in
             let elapsed = moment.date.timeIntervalSince(began)
             Canvas { context, size in
-                let ink = Theme.ink
+                let ink = Theme.accent
                 let centre = CGPoint(x: size.width / 2, y: size.height / 2)
                 let reach = hypot(size.width, size.height) / 2
                 // The wave's front, easing out as it nears the corners.
@@ -153,9 +153,21 @@ private struct Opening: View {
     @State private var showsButton = false
 
     private static let name = Array("Oree")
+    private static let mark = Bundle.main.url(forResource: "Mark", withExtension: "png").flatMap(NSImage.init(contentsOf:))
 
     var body: some View {
         VStack(spacing: 18) {
+            // The mark first, then the name beside it a letter at a time.
+            HStack(spacing: 18) {
+                if let mark = Self.mark {
+                    Image(nsImage: mark)
+                        .resizable()
+                        .frame(width: 78, height: 78)
+                        .opacity(shown > 0 ? 1 : 0)
+                        .scaleEffect(shown > 0 ? 1 : 0.6)
+                        .rotationEffect(.degrees(shown > 0 ? 0 : -90))
+                        .animation(.spring(response: 0.8, dampingFraction: 0.7), value: shown > 0)
+                }
             HStack(spacing: 2) {
                 ForEach(Self.name.indices, id: \.self) { index in
                     Text(String(Self.name[index]))
@@ -166,9 +178,9 @@ private struct Opening: View {
                         .animation(.spring(response: 0.7, dampingFraction: 0.78), value: shown)
                 }
             }
-            Text("Your desktop, put to work.")
-                .font(.title3)
-                .foregroundStyle(Theme.secondary)
+            }
+            (Text("Your desktop, ").foregroundStyle(Theme.secondary) + Text("put to work.").foregroundStyle(Theme.accent))
+                .font(.title3.weight(.medium))
                 .opacity(showsLine ? 1 : 0)
                 .offset(y: showsLine ? 0 : 8)
             Button("Get started", action: begin)
@@ -244,7 +256,7 @@ private struct Choice<Trailing: View>: View {
             .glass(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(Theme.ink.opacity(chosen ? 0.7 : 0), lineWidth: 1.5)
+                    .strokeBorder(Theme.accent.opacity(chosen ? 0.9 : 0), lineWidth: 1.5)
             )
             .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
@@ -262,7 +274,7 @@ private struct Check: View {
             Circle()
                 .strokeBorder(Theme.ink.opacity(isOn ? 0 : 0.3), lineWidth: 1.5)
             if isOn {
-                Circle().fill(Theme.ink.opacity(0.95))
+                Circle().fill(Theme.accent)
                 Image(systemName: "checkmark")
                     .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(Theme.ground)

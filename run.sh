@@ -35,6 +35,7 @@ AGENT
 install -m 755 "$(swift build "${BUILD_ARGS[@]}" --show-bin-path)/Oree" "$APP/Contents/MacOS/Oree"
 mkdir -p "$APP/Contents/Resources"
 install -m 644 Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
+install -m 644 Resources/Mark.png "$APP/Contents/Resources/Mark.png"
 cat >"$APP/Contents/Info.plist" <<'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -77,7 +78,8 @@ codesign --force --sign "${IDENTITY:--}" --identifier space.oree.app "$APP" 2>/d
 # Oree runs from /Applications: the system will not keep a login item whose
 # app can move, and a build folder is no place for one.
 INSTALLED="/Applications/Oree.app"
-rm -rf "$INSTALLED"
+# Copied over the installed app, never removed first: the system's record of
+# the login agent belongs to that bundle, and deleting it breaks the record.
 ditto "$APP" "$INSTALLED"
 # One Oree on the system: the copy in the build folder is not an app to
 # offer in Spotlight or Launchpad, and the installed one shows its new icon.

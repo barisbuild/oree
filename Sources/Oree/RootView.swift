@@ -3,26 +3,16 @@ import SwiftUI
 /// How much of the screen the picture takes, from the top.
 private let heroShare: CGFloat = 0.46
 
+/// One display's desktop. First-run setup and Settings open in a window of
+/// their own above it (see CoverWindow).
 struct RootView: View {
     let store: SessionStore
     let space: ScreenSpace
-    @State private var showsSettings = false
+    let display: CGDirectDisplayID
 
     var body: some View {
-        ZStack {
-            HomeView(store: store, insets: space.insets) {
-                showsSettings = true
-            }
-            if !store.preferences.onboarded {
-                Onboarding(store: store) {
-                    withAnimation(.smooth(duration: 0.7)) { store.preferences.onboarded = true }
-                }
-                .transition(.opacity.combined(with: .scale(scale: 1.04)))
-            } else if showsSettings {
-                SettingsCard(store: store) {
-                    showsSettings = false
-                }
-            }
+        HomeView(store: store, insets: space.insets) {
+            NotificationCenter.default.post(name: .oreeShowSettings, object: display)
         }
     }
 }

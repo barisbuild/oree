@@ -31,6 +31,18 @@ final class DesktopRole {
         }
     }
 
+    /// Drop the login agent's registration and make it afresh.
+    static func reregister() -> Bool {
+        try? agent.unregister()
+        do {
+            try agent.register()
+            return true
+        } catch {
+            print(error.localizedDescription)
+            return false
+        }
+    }
+
     func turnOn() {
         if Self.agent.status != .enabled {
             do {

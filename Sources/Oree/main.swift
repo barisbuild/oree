@@ -8,6 +8,12 @@ if CommandLine.arguments.contains("--take-desktop-role") {
     exit(role.isOn ? 0 : 1)
 }
 
+// `Oree --repair-desktop-role` registers the login agent again, for when
+// the system's record of it no longer matches the installed app.
+if CommandLine.arguments.contains("--repair-desktop-role") {
+    exit(DesktopRole.reregister() ? 0 : 1)
+}
+
 // `Oree --check-access` reports which protected places this app can open.
 if CommandLine.arguments.contains("--check-access") {
     let home = NSHomeDirectory()

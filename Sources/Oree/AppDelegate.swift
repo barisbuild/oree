@@ -3,6 +3,8 @@ import SwiftUI
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var windows: [DesktopWindow] = []
+    /// First-run setup or Settings, when either is open.
+    private var cover: CoverWindow?
     private let store = SessionStore()
 
     func applicationWillFinishLaunching(_ notification: Notification) {
@@ -45,6 +47,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         store.keepFresh()
         arrangeWindows()
+        if !store.preferences.onboarded { showOnboarding() }
+        NotificationCenter.default.addObserver(forName: .oreeShowSettings, object: nil, queue: .main) { [weak self] note in
+            self?.showSettings(on: note.object as? CGDirectDisplayID)
+        }
         NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
             object: nil,
@@ -52,6 +58,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ) { [weak self] _ in
             self?.arrangeWindows()
         }
+    }
+
+    /// The display a cover opens on: the one asked for, else the main one.
+    private func screen(for display: CGDirectDisplayID?) -> NSScreen? {
+        NSScreen.screens.first { $0.displayID == display } ?? NSScreen.main ?? NSScreen.screens.first
+    }
+
+    private func showOnboarding() {
+        guard let screen = screen(for: nil) else { return }
+        let window = CoverWindow(screen: screen) { [store] in
+            Onboarding(store: store) { [weak self] in
+                store.preferences.onboarded = true
+                self?.closeCover()
+            }
+        }
+        // Setup stays above other apps until it is done.
+        window.level = .floating
+        cover = window
+        window.present()
+    }
+
+    private func showSettings(on display: CGDirectDisplayID?) {
+        guard cover == nil, let screen = screen(for: display) else { return }
+        let window = CoverWindow(screen: screen) { [store] in
+            SettingsCard(store: store) { [weak self] in self?.closeCover() }
+        }
+        cover = window
+        window.present()
+    }
+
+    private func closeCover() {
+        cover?.orderOut(nil)
+        cover = nil
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -75,8 +114,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if let window = windows.first(where: { $0.display == screen.displayID }) {
                 window.follow(screen)
             } else {
-                windows.append(DesktopWindow(screen: screen) { space in
-                    RootView(store: store, space: space)
+                windows.append(DesktopWindow(screen: screen) { [store] space in
+                    RootView(store: store, space: space, display: screen.displayID)
                 })
             }
         }
