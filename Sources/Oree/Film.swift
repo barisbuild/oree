@@ -9,6 +9,8 @@ import AppKit
 @MainActor
 enum Film {
     private static var recording = false
+    /// Asks the desktop to close the conversation in view.
+    static let closeChat = Notification.Name("OreeFilmCloseChat")
 
     static func run(in window: NSWindow) {
         guard !recording else { return }
@@ -59,7 +61,10 @@ enum Film {
             }
         }
 
-        await hold(0.25)
+        // A moment on the desktop first, the pointer idling over the widgets.
+        await hold(0.4)
+        await glide(to: CGPoint(x: 880, y: 760), over: 1.2)
+        await hold(0.3)
         await glide(to: CGPoint(x: 640, y: 446), over: 0.7)
         click()
         await hold(0.3)
@@ -79,9 +84,12 @@ enum Film {
         await glide(to: CGPoint(x: 760, y: 360), over: 0.8)
         await hold(1.5)
         // And back to the desktop, everything in view.
-        await glide(to: CGPoint(x: 492, y: 62), over: 0.7)
+        await glide(to: CGPoint(x: 588, y: 64), over: 0.7)
         click()
-        await hold(0.8)
+        // A click on a window in the background only brings it forward;
+        // the desktop is asked to close the conversation as well.
+        NotificationCenter.default.post(name: Film.closeChat, object: nil)
+        await hold(1.8)
         await recorder.stop()
     }
 

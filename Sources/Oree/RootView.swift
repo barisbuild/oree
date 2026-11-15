@@ -101,6 +101,7 @@ struct HomeView: View {
         // The sweep works anywhere on the desktop, picture included, the way
         // it does on Finder's.
         .modifier(Sweep(picked: $picked, frames: frames))
+        .onReceive(NotificationCenter.default.publisher(for: Film.closeChat)) { _ in show(nil) }
     }
 
     private func open(_ session: AgentSession) {
