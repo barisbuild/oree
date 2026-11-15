@@ -48,14 +48,16 @@ struct WidgetGrid: View {
         return rows * widgetHeight + (rows - 1) * Self.gap <= size.height
     }
 
-    /// As few columns as let every widget fit without scrolling; when even
-    /// the most the width allows cannot, that many, and the grid scrolls.
+    /// Four across, two rows, on any screen wide enough for it, whatever
+    /// its height; fewer only where four will not fit across. More than four
+    /// only when the rows would otherwise run off the bottom.
     private func columns(in size: CGSize) -> Int {
         let most = max(1, Int((size.width + Self.gap) / (260 + Self.gap)))
-        for columns in min(3, most)...most {
+        let preferred = min(4, most)
+        for columns in preferred...max(preferred, most) {
             if fits(columns, in: size) { return columns }
         }
-        return most
+        return max(preferred, most)
     }
 }
 
