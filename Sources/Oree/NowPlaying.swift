@@ -27,13 +27,14 @@ final class NowPlaying {
     /// The icon of the app it is playing in, shown when there is no cover.
     private(set) var sourceIcon: NSImage?
     @ObservationIgnored private var sourceBundle = ""
-    @ObservationIgnored private var ticker: Timer?
+    @ObservationIgnored private var watcher: Process?
     @ObservationIgnored private var reading = false
 
     var hasTrack: Bool { !title.isEmpty }
 
     private static let folder = URL(fileURLWithPath: NSTemporaryDirectory())
     private static let reader = folder.appendingPathComponent("oree-now-playing.js")
+    private static let watch = folder.appendingPathComponent("oree-now-playing-watch.js")
     private static let cover = folder.appendingPathComponent("oree-now-playing-cover")
 
     private static let prelude = """
@@ -71,6 +72,44 @@ final class NowPlaying {
         }
         """
 
+    /// Stays running and writes a line of JSON, as the reader does, each
+    /// time what is playing changes: paused from the keyboard or earbuds,
+    /// a new song, moved along. Nothing playing writes "{}".
+    private static let watchScript = """
+        function run() {
+            \(prelude)
+            var request = $.NSClassFromString("MRNowPlayingRequest");
+            var out = $.NSFileHandle.fileHandleWithStandardOutput;
+            var last = null;
+            for (;;) {
+                var line = "{}";
+                var item = request.localNowPlayingItem;
+                if (!item.isNil()) {
+                    var info = item.nowPlayingInfo;
+                    var text = function (key) {
+                        var value = info.valueForKey("kMRMediaRemoteNowPlayingInfo" + key);
+                        return value.isNil() ? "" : ObjC.unwrap(value.description);
+                    };
+                    var client = request.localNowPlayingPlayerPath.client;
+                    var stamp = info.valueForKey("kMRMediaRemoteNowPlayingInfoTimestamp");
+                    line = JSON.stringify({
+                        title: text("Title"), artist: text("Artist"), album: text("Album"), rate: text("PlaybackRate"),
+                        elapsed: text("ElapsedTime"), duration: text("Duration"),
+                        store: text("AlbumiTunesStoreAdamIdentifier") || text("iTunesStoreSubscriptionAdamIdentifier") || text("iTunesStoreIdentifier"),
+                        stamp: stamp.isNil() ? "" : String(stamp.timeIntervalSince1970),
+                        app: client.isNil() ? "" : ObjC.unwrap(client.displayName),
+                        bundle: client.isNil() ? "" : ObjC.unwrap(client.bundleIdentifier)
+                    });
+                }
+                if (line !== last) {
+                    out.writeData($(line + "\\n").dataUsingEncoding($.NSUTF8StringEncoding));
+                    last = line;
+                }
+                delay(0.3);
+            }
+        }
+        """
+
     /// The system's media commands, called in this process: sending, unlike
     /// reading, needs no help from an Apple program, so it is immediate.
     private static let remote = dlopen("/System/Library/PrivateFrameworks/MediaRemote.framework/MediaRemote", RTLD_NOW)
@@ -80,7 +119,9 @@ final class NowPlaying {
     private static let setElapsed = dlsym(remote, "MRMediaRemoteSetElapsedTime").map { unsafeBitCast($0, to: SetElapsed.self) }
 
     init() {
-        if Demo.on {
+        // A recording may show what is really playing, with the rest made up:
+        // `defaults write space.oree.app demoLiveMusic -bool true`.
+        if Demo.on && !UserDefaults.standard.bool(forKey: "demoLiveMusic") {
             title = "Low Tide"
             artist = "Halden"
             album = "Shorelines"
@@ -94,10 +135,39 @@ final class NowPlaying {
             return
         }
         try? Self.readScript.write(to: Self.reader, atomically: true, encoding: .utf8)
-        read()
-        ticker = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] _ in
-            self?.read()
+        try? Self.watchScript.write(to: Self.watch, atomically: true, encoding: .utf8)
+        startWatching()
+    }
+
+    /// Run the watching script and take each line it writes. Should it ever
+    /// stop, it is started again.
+    private func startWatching() {
+        let process = Process()
+        let output = Pipe()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        process.arguments = ["-l", "JavaScript", Self.watch.path]
+        process.standardOutput = output
+        process.standardError = FileHandle.nullDevice
+        var pending = Data()
+        output.fileHandleForReading.readabilityHandler = { [weak self] handle in
+            let data = handle.availableData
+            guard !data.isEmpty else {
+                handle.readabilityHandler = nil
+                return
+            }
+            pending.append(data)
+            while let newline = pending.firstIndex(of: 0x0A) {
+                let line = pending[pending.startIndex..<newline]
+                pending.removeSubrange(pending.startIndex...newline)
+                let item = (try? JSONSerialization.jsonObject(with: line)) as? [String: String]
+                DispatchQueue.main.async { self?.take(item, cover: nil, coverWasRead: false) }
+            }
         }
+        process.terminationHandler = { [weak self] _ in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { self?.startWatching() }
+        }
+        watcher = process
+        try? process.run()
     }
 
     private func read(withCover: Bool = false) {
@@ -218,18 +288,12 @@ final class NowPlaying {
         readAt = Date()
         if Demo.on { return }
         Self.setElapsed?(seconds)
-        readSoon()
     }
     func previous() { send(5) }
 
+    /// The watcher reports what comes of it.
     private func send(_ command: Int32) {
         _ = Self.sendCommand?(command, nil)
-        readSoon()
-    }
-
-    /// Read again shortly, once the playing app has acted on a command.
-    private func readSoon() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { self.read() }
     }
 }
 
@@ -276,6 +340,7 @@ struct NowPlayingWidget: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: Self.coverSize, alignment: .leading)
                 }
+                .padding(.top, 8)
                 .frame(maxHeight: .infinity, alignment: .top)
             } else {
                 VStack(spacing: 8) {
