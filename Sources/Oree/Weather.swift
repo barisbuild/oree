@@ -135,24 +135,24 @@ struct WeatherWidget: View {
                 Hint("The weather could not be read. It is tried again every minute.")
             case .ready:
                 VStack(alignment: .leading, spacing: 0) {
-                    // Where, and how warm, on the left; what the sky is
-                    // doing and the day's range on the right, level with it.
-                    HStack(alignment: .bottom, spacing: 10) {
+                    // Two columns from the same top line: where and how warm
+                    // on the left; the sky, what it is doing and the day's
+                    // range on the right.
+                    HStack(alignment: .top, spacing: 10) {
                         VStack(alignment: .leading, spacing: 0) {
                             Text(feed.place.isEmpty ? "Here" : feed.place)
                                 .font(.callout.weight(.semibold))
                                 .lineLimit(1)
-                            HStack(spacing: 8) {
-                                IconView(feed.icon, size: 28)
-                                Text("\(feed.temperature)°")
-                                    .font(.system(size: 40, weight: .light))
-                                    .monospacedDigit()
-                            }
+                            Text("\(feed.temperature)°")
+                                .font(.system(size: 42, weight: .light))
+                                .monospacedDigit()
                         }
                         Spacer(minLength: 8)
-                        VStack(alignment: .trailing, spacing: 3) {
+                        VStack(alignment: .trailing, spacing: 4) {
+                            IconView(feed.icon, size: 22)
                             Text(feed.summary)
                                 .font(.callout.weight(.medium))
+                                .lineLimit(1)
                             if let today = feed.days.first {
                                 Text("H \(today.high)°  L \(today.low)°")
                                     .font(.caption)
@@ -160,7 +160,6 @@ struct WeatherWidget: View {
                                     .monospacedDigit()
                             }
                         }
-                        .padding(.bottom, 8)
                     }
                     Spacer(minLength: 10)
                     // The days ahead, on a panel of their own.

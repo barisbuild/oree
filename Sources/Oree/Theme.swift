@@ -13,6 +13,9 @@ enum Theme {
     /// Tints of it make the panels, hairlines and quieter text.
     static let ink = adaptive(light: NSColor(red: 0.06, green: 0.06, blue: 0.09, alpha: 1), dark: .white)
     static let panel = ink.opacity(0.07)
+    /// A fine dark edge round each card in light mode, where pale glass on a
+    /// pale ground would otherwise lose its outline; none in dark mode.
+    static let cardEdge = adaptive(light: NSColor.black.withAlphaComponent(0.09), dark: .clear)
     static let hairline = ink.opacity(0.1)
     static let primary = ink.opacity(0.92)
     static let secondary = ink.opacity(0.55)
@@ -70,11 +73,13 @@ private struct GlassCard: ViewModifier {
 
     func body(content: Content) -> some View {
         if #available(macOS 26.0, *) {
-            content.background {
-                Color.clear
-                    .glassEffect(.regular, in: shape)
-                    .clipShape(shape)
-            }
+            content
+                .background {
+                    Color.clear
+                        .glassEffect(.regular, in: shape)
+                        .clipShape(shape)
+                }
+                .overlay(shape.strokeBorder(Theme.cardEdge))
         } else {
             content
                 .background(Theme.card, in: shape)
