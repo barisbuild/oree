@@ -239,9 +239,9 @@ struct NowPlayingWidget: View {
         Button(action: playing.toggle) {
             Image(systemName: playing.isPlaying ? "pause.fill" : "play.fill")
                 .font(.system(size: 16))
-                .foregroundStyle(Theme.card)
+                .foregroundStyle(.white)
                 .frame(width: 40, height: 40)
-                .background(Theme.ink, in: Circle())
+                .background(Theme.accent, in: Circle())
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
