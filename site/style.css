@@ -60,8 +60,9 @@ canvas.picture { display: block; width: 100%; image-rendering: pixelated; }
   border-radius: 999px; background: var(--blue); color: #fff; font-size: 14.5px; font-weight: 500; letter-spacing: -0.01em;
   transition: background 0.2s, transform 0.2s var(--out);
 }
-/* The app's icon fills the pill's left end, cut by its curve. */
-.get img { align-self: stretch; width: auto; height: auto; aspect-ratio: 1; margin-right: 4px; object-fit: cover; }
+/* The app's icon fills the pill's left end as a circle, a white edge on
+   its right where it meets the blue. */
+.get img { box-sizing: border-box; align-self: stretch; width: auto; height: auto; aspect-ratio: 1; margin-right: 4px; border-right: 2px solid #fff; border-radius: 50%; object-fit: cover; }
 .get svg { width: 15px; height: 15px; transition: transform 0.25s var(--out); }
 .get:hover { background: #2530c4; }
 .get:hover svg { transform: translateX(2px); }
