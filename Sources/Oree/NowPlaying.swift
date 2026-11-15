@@ -18,8 +18,9 @@ final class NowPlaying {
     /// How far in it was when last read, and when that was.
     @ObservationIgnored private var elapsed: Double = 0
     @ObservationIgnored private var readAt = Date()
-    /// The store item a cover was last looked up for.
-    @ObservationIgnored private var lookedUp = ""
+    /// Covers looked up from the store, by item, and the item now wanted.
+    @ObservationIgnored private var covers: [String: NSImage] = [:]
+    @ObservationIgnored private var wanted = ""
     /// The app the media is playing in.
     private(set) var source = ""
     private(set) var isPlaying = false
@@ -217,9 +218,10 @@ final class NowPlaying {
             artwork = cover
             // Apple Music sends no cover of its own, only the item's number
             // in its store: the store's public lookup has the picture.
-            if cover == nil, let store = item["store"], !store.isEmpty, store != lookedUp {
-                lookedUp = store
-                lookUpCover(store)
+            // Songs from one album share a cover: looked up once, kept.
+            if cover == nil, let store = item["store"], !store.isEmpty {
+                wanted = store
+                if let known = covers[store] { artwork = known } else { lookUpCover(store) }
             }
         } else if changed {
             // A new item: its cover is worth a second, fuller read.
@@ -253,8 +255,9 @@ final class NowPlaying {
                   let image = NSImage(data: picture)
             else { return }
             await MainActor.run {
+                self.covers[store] = image
                 // Still the same item: set its cover.
-                if self.lookedUp == store { self.artwork = image }
+                if self.wanted == store { self.artwork = image }
             }
         }
     }
