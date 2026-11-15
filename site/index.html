@@ -84,22 +84,27 @@
     </div>
   </section>
 
-  <section class="split flip" id="assistant" aria-labelledby="assistant-title">
-    <div class="words" data-reveal>
+  <!-- The assistant: words centred, the conversation on a screen that
+       starts tipped back and lies flat as it comes into view, with what
+       matters about it floating at different depths in front. -->
+  <section class="ask-section" id="assistant" data-ask-section aria-labelledby="assistant-title">
+    <div class="head centred" data-reveal>
       <h2 id="assistant-title">Ask the desktop.<br><span>It asks you back.</span></h2>
       <p>Type what you need and an agent goes to work on this Mac. The answer opens over the desktop, picture and all.</p>
-      <ul class="points">
-        <li>Works through Claude Code or Codex, on your own account</li>
-        <li>Shows you each change before it is made</li>
-        <li>Keeps no keys and has no account of its own</li>
-      </ul>
     </div>
-    <div class="inset bleed" data-reveal style="--i:1">
-      <div class="app chat" aria-label="An example conversation">
-        <canvas class="picture" data-picture aria-hidden="true"></canvas>
-        <div class="thread" data-thread></div>
-        <div class="reply"><span data-typing></span><b></b></div>
+    <div class="ask-stage" data-reveal style="--i:1">
+      <div class="ask-screen">
+        <div class="app chat" aria-label="An example conversation">
+          <canvas class="picture" data-picture aria-hidden="true"></canvas>
+          <div class="thread" data-thread></div>
+          <div class="reply"><span data-typing></span><b></b></div>
+        </div>
       </div>
+      <ul class="ask-notes">
+        <li style="--n:0"><span class="tile"><svg data-icon="activity"></svg></span>Works through Claude Code or Codex, on your own account</li>
+        <li style="--n:1"><span class="tile"><svg data-icon="checkCircle"></svg></span>Shows you each change before it is made</li>
+        <li style="--n:2"><span class="tile"><svg data-icon="laptop"></svg></span>Keeps no keys and has no account of its own</li>
+      </ul>
     </div>
   </section>
 

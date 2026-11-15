@@ -658,6 +658,7 @@ const say = (kind, html) => {
   requestAnimationFrame(() => line.classList.add("in"));
   return line;
 };
+const REQUEST = "Tidy my Downloads into folders by month";
 const ANSWER = "Done. 46 files are now in five folders, one for each month. Nothing was deleted.";
 let conversing = false;
 
@@ -694,6 +695,16 @@ function showConversation() {
     say(kind, text);
   }
 }
+
+// The assistant's screen lies flat as it comes up the page.
+const askStage = $(".ask-stage");
+function tiltAsk() {
+  const top = askStage.getBoundingClientRect().top;
+  askStage.style.setProperty("--tilt", fixed() ? "0" : (1 - ease(span(innerHeight - top, 80, innerHeight * 0.75))).toFixed(4));
+}
+addEventListener("scroll", () => requestAnimationFrame(tiltAsk), { passive: true });
+addEventListener("resize", tiltAsk);
+tiltAsk();
 
 // ---- What happens as things scroll into view
 
