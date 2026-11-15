@@ -159,7 +159,7 @@ function tell() {
   const typed = span(p, 0.36, 0.82);
   scene.style.setProperty("--g", ease(span(p, 0, 0.3)).toFixed(4));
   scene.style.setProperty("--t5", typed.toFixed(4));
-  const play = ease(span(p, 0.86, 0.97));
+  const play = ease(span(p, 0.84, 0.97));
   scene.style.setProperty("--play", play.toFixed(4));
   scene.classList.toggle("inviting", play > 0.5);
   lead.toggleAttribute("inert", p > 0.12);

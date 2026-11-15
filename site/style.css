@@ -193,7 +193,7 @@ h2 span { color: var(--faint); }
 .scene.on .grid .w { opacity: 1; transform: none; filter: none; }
 
 /* The conversation that takes the desktop's place once the request is sent. */
-.talk { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; gap: 1em; padding: 17% 26% 0; background: rgb(243 243 246 / 0.52); font-size: 1.08cqw; opacity: clamp(0, (var(--t5) - 0.46) * 12, 1); pointer-events: none; }
+.talk { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; gap: 1em; padding: 17% 26% 0; background: rgb(243 243 246 / 0.52); font-size: 1.08cqw; opacity: calc(clamp(0, (var(--t5) - 0.46) * 12, 1) * (1 - var(--play))); pointer-events: none; }
 .talk p { --in: clamp(0, (var(--t5) - var(--at)) * 14, 1); opacity: var(--in); transform: translateY(calc((1 - var(--in)) * 0.9em)); }
 .talk .you { align-self: flex-start; padding: 0.6em 1em; border: 1px solid var(--app-line); border-radius: 1em; background: rgb(255 255 255 / 0.9); }
 .talk .tool { font-family: var(--mono); font-size: 0.88em; color: var(--app-soft); }
@@ -203,9 +203,10 @@ h2 span { color: var(--faint); }
 .talk .ask b { background: var(--app-blue); color: #fff; }
 
 /* The invitation, once the story is told. */
-.play { position: absolute; left: 0; right: 0; bottom: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 18px; opacity: var(--play); transform: translateY(calc((1 - var(--play)) * 14px)); pointer-events: none; }
-.scene.inviting .play { pointer-events: auto; }
-.play strong { font-size: 19px; font-weight: 500; letter-spacing: -0.02em; }
+/* The last word, once the story is told: large, over the screen. */
+.play { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; display: grid; place-items: center; padding: 0 20px 17vh; text-align: center; opacity: var(--play); transform: translateY(calc((1 - var(--play)) * 24px)); filter: blur(calc((1 - var(--play)) * 8px)); pointer-events: none; }
+.play p { font-size: clamp(40px, 7vw, 104px); font-weight: 500; line-height: 1; letter-spacing: -0.05em; color: var(--ink); text-shadow: 0 0 40px rgb(255 255 255 / 0.9), 0 0 12px rgb(255 255 255 / 0.9); text-wrap: balance; }
+.play span { color: var(--blue); }
 .seg { display: inline-flex; padding: 4px; border-radius: 999px; background: var(--panel); }
 .seg button { height: 32px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; color: var(--soft); font: 500 14px var(--sans); cursor: pointer; transition: background 0.2s, color 0.2s; }
 .seg button:hover { color: var(--ink); }
