@@ -3,7 +3,7 @@ import Observation
 
 /// The command-line agents Oree can put to work. Each is the user's own
 /// install, signed in with the user's own account; Oree holds no keys.
-enum Agent: String, CaseIterable, Identifiable {
+enum Agent: String, CaseIterable, Identifiable, Codable {
     case claude, codex
 
     var id: Self { self }
@@ -30,13 +30,32 @@ enum Agent: String, CaseIterable, Identifiable {
 final class AgentSession: Identifiable {
     enum State { case idle, working, waiting, ended }
 
-    struct Entry: Identifiable {
-        enum Kind { case user, assistant, tool, error }
-        let id = UUID()
+    struct Entry: Identifiable, Codable {
+        enum Kind: String, Codable { case user, assistant, tool, error }
+        let id: UUID
         let kind: Kind
         let text: String
         /// When it arrived, so a new answer can be shown arriving.
-        let at = Date()
+        let at: Date
+
+        init(kind: Kind, text: String) {
+            id = UUID()
+            self.kind = kind
+            self.text = text
+            at = Date()
+        }
+    }
+
+    /// What is kept of a conversation between launches: enough to show it
+    /// again and for its agent to take it up where it left off.
+    struct Record: Codable {
+        let id: UUID
+        let agent: Agent
+        let folder: URL
+        let entries: [Entry]
+        /// Claude Code's session, or Codex's thread.
+        let resume: String?
+        let model: String
     }
 
     /// A tool call the agent may not make until the user says so.
@@ -49,9 +68,14 @@ final class AgentSession: Identifiable {
         fileprivate var method = ""
     }
 
-    let id = UUID()
+    let id: UUID
     let agent: Agent
     let folder: URL
+    /// The agent's own name for the conversation, so it can be resumed.
+    private(set) var resume: String?
+    /// The agent process is running. A conversation brought back from a
+    /// past launch starts it only when there is something to send.
+    @ObservationIgnored private var started = false
     /// Whether the user has chosen to let agents act without asking. Read
     /// at each request, so a change applies to the next one.
     @ObservationIgnored private let bypass: () -> Bool
@@ -77,13 +101,38 @@ final class AgentSession: Identifiable {
     @ObservationIgnored private var nextCall = 0
 
     init(agent: Agent, folder: URL, bypass: @escaping () -> Bool = { false }) {
+        id = UUID()
         self.agent = agent
         self.folder = folder
         self.bypass = bypass
+        start()
+    }
+
+    /// A conversation from a past launch, shown as it was.
+    init(record: Record, bypass: @escaping () -> Bool = { false }) {
+        id = record.id
+        agent = record.agent
+        folder = record.folder
+        self.bypass = bypass
+        entries = record.entries
+        resume = record.resume
+        model = record.model
+        // Without the agent's name for it, it cannot be taken up again.
+        state = record.resume == nil ? .ended : .idle
+    }
+
+    var record: Record {
+        Record(id: id, agent: agent, folder: folder, entries: entries, resume: resume, model: model)
+    }
+
+    /// Start the agent, taking up the conversation if it has a name for it.
+    private func start() {
+        started = true
         if Demo.on { return }
         switch agent {
         case .claude:
-            run("exec claude --print --input-format stream-json --output-format stream-json --verbose --permission-prompt-tool stdio --append-system-prompt '\(Self.desktopBrief)'")
+            let resuming = resume.map { " --resume '\($0)'" } ?? ""
+            run("exec claude --print --input-format stream-json --output-format stream-json --verbose --permission-prompt-tool stdio\(resuming) --append-system-prompt '\(Self.desktopBrief)'")
         case .codex:
             run("exec codex app-server")
             call("initialize", ["clientInfo": ["name": "oree", "title": "Oree", "version": "1"]])
@@ -94,6 +143,7 @@ final class AgentSession: Identifiable {
     /// message carries context the user did not type.
     func send(_ text: String, shownAs shown: String? = nil) {
         guard state != .ended else { return }
+        if !started { start() }
         entries.append(Entry(kind: .user, text: shown ?? text))
         state = .working
         if Demo.on {
@@ -323,8 +373,9 @@ final class AgentSession: Identifiable {
     private func handleClaude(_ event: [String: Any]) {
         switch event["type"] as? String {
         case "system":
-            if event["subtype"] as? String == "init", let name = event["model"] as? String {
-                model = name
+            if event["subtype"] as? String == "init" {
+                if let name = event["model"] as? String { model = name }
+                if let session = event["session_id"] as? String { resume = session }
             }
         case "assistant":
             let message = event["message"] as? [String: Any]
@@ -449,7 +500,7 @@ final class AgentSession: Identifiable {
         if let error = message["error"] as? [String: Any] {
             entries.append(Entry(kind: .error, text: error["message"] as? String ?? "Codex refused a request."))
             // Without a conversation there is nothing more to do.
-            if method == "initialize" || method == "thread/start" { stop() } else { state = .idle }
+            if method == "initialize" || method == "thread/start" || method == "thread/resume" { stop() } else { state = .idle }
             return
         }
         let result = message["result"] as? [String: Any] ?? [:]
@@ -464,9 +515,16 @@ final class AgentSession: Identifiable {
                 "developerInstructions": Self.desktopBrief,
             ]
             if let model = Self.codexModel() { params["model"] = model }
-            call("thread/start", params)
-        case "thread/start":
+            // A conversation from before is taken up by its thread.
+            if let resume {
+                params["threadId"] = resume
+                call("thread/resume", params)
+            } else {
+                call("thread/start", params)
+            }
+        case "thread/start", "thread/resume":
             thread = (result["thread"] as? [String: Any])?["id"] as? String
+            resume = thread
             model = result["model"] as? String ?? ""
             let waiting = early
             early = []

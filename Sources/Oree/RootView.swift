@@ -74,15 +74,18 @@ struct HomeView: View {
             }
             .frame(height: geometry.size.height)
             .overlay(alignment: .topTrailing) {
-                Button(action: settings) {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 19, weight: .medium))
-                        .frame(width: 40, height: 40)
-                        .glass(in: Circle())
-                        .contentShape(Circle())
+                HStack(spacing: 8) {
+                    AgentsButton(store: store, open: open)
+                    Button(action: settings) {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 19, weight: .medium))
+                            .frame(width: 40, height: 40)
+                            .glass(in: Circle())
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Settings")
                 }
-                .buttonStyle(.plain)
-                .help("Settings")
                 .padding(.top, insets.top + 12)
                 .padding(.trailing, insets.trailing + 16)
             }
@@ -193,7 +196,6 @@ struct Composer: View {
             // and leaves the widgets where they are.
             .frame(height: resting, alignment: .bottom)
 
-            AgentsButton(store: store, open: open)
         }
         .alert("Let agents act without asking?", isPresented: $confirmsBypass) {
             Button("I accept", role: .destructive) { store.preferences.bypassPermissions = true }
@@ -338,8 +340,8 @@ private struct AgentsButton: View {
                     }
                 }
                 .font(.callout.weight(.medium))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
+                .padding(.horizontal, 14)
+                .frame(height: 40)
                 .glass(in: Capsule())
                 .contentShape(Capsule())
             }

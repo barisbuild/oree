@@ -107,7 +107,8 @@ struct RemindersWidget: View {
                         Hint("Nothing left to do.")
                     }
                     ForEach(feed.items.prefix(adding ? 4 : 5)) { item in
-                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        // Centred, so the round box sits level with the text.
+                        HStack(alignment: .center, spacing: 8) {
                             Button {
                                 feed.complete(item)
                             } label: {
@@ -156,7 +157,7 @@ struct RemindersWidget: View {
     /// A line to write a reminder on, as plain as a to-do list: Return adds
     /// it and leaves the line ready for the next, Escape puts it away.
     private var newReminder: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
+        HStack(alignment: .center, spacing: 8) {
             Circle()
                 .strokeBorder(Theme.secondary, style: StrokeStyle(lineWidth: 1.5, dash: [2, 2]))
                 .frame(width: 13, height: 13)

@@ -51,7 +51,12 @@ enum Snapshot {
             Self.mainDesktop?.makeKey()
             // Give the window a moment to become key and focus its field.
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                let editor = NSApp.keyWindow?.firstResponder as? NSTextView
+                // Another app may have kept the front: focus the field directly.
+                if let window = Self.mainDesktop, !(window.firstResponder is NSTextView) {
+                    let field = MainActor.assumeIsolated { Film.firstField(in: window.contentView) }
+                    if let field { window.makeFirstResponder(field) }
+                }
+                let editor = Self.mainDesktop?.firstResponder as? NSTextView
                 editor?.insertText(words, replacementRange: editor?.selectedRange() ?? NSRange())
                 guard submit else { return }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {

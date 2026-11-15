@@ -86,7 +86,7 @@ enum Film {
     }
 
     /// The first editable text field in a view's tree: the task box.
-    private static func firstField(in view: NSView?) -> NSTextField? {
+    static func firstField(in view: NSView?) -> NSTextField? {
         guard let view else { return nil }
         if let field = view as? NSTextField, field.isEditable { return field }
         for child in view.subviews {
