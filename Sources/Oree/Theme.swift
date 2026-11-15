@@ -61,6 +61,28 @@ private struct TintedGlass<S: Shape>: ViewModifier {
     }
 }
 
+/// Glass casts a shadow of its own whenever the window is the active one,
+/// which on the flat desktop reads as a grey smudge round every card. The
+/// glass is drawn as a layer behind the card's content and cut to the
+/// card's shape, which leaves the shadow outside it with nowhere to fall.
+private struct GlassCard: ViewModifier {
+    private let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, *) {
+            content.background {
+                Color.clear
+                    .glassEffect(.regular, in: shape)
+                    .clipShape(shape)
+            }
+        } else {
+            content
+                .background(Theme.card, in: shape)
+                .overlay(shape.strokeBorder(Theme.hairline))
+        }
+    }
+}
+
 extension View {
     func glass(in shape: some Shape) -> some View {
         modifier(GlassSurface(shape: shape))
@@ -70,12 +92,9 @@ extension View {
         modifier(TintedGlass(tint: tint, shape: shape))
     }
 
-    /// The card every widget sits on. It is a plain surface, not glass:
-    /// on the flat ground there is nothing for glass to bend, and glass
-    /// casts a shadow of its own whenever the window is the active one.
+    /// The card every widget sits on: Liquid Glass where the system has it.
     func card() -> some View {
-        background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Theme.hairline))
+        modifier(GlassCard())
     }
 }
 
