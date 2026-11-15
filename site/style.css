@@ -56,13 +56,12 @@ canvas.picture { display: block; width: 100%; image-rendering: pixelated; }
 .mark { width: 30px; height: 30px; background: url("mark.png") center / contain no-repeat; }
 /* Across from the name: one quiet pill. */
 .get {
-  display: inline-flex; align-items: center; gap: 7px; height: 40px; margin-left: auto; padding: 0 16px 0 0; overflow: hidden;
+  display: inline-flex; align-items: center; gap: 7px; height: 40px; margin-left: auto; padding: 0 16px 0 13px;
   border-radius: 999px; background: var(--blue); color: #fff; font-size: 14.5px; font-weight: 500; letter-spacing: -0.01em;
   transition: background 0.2s, transform 0.2s var(--out);
 }
-/* The app's icon fills the pill's left end as a circle, a white edge on
-   its right where it meets the blue. */
-.get img { box-sizing: border-box; align-self: stretch; width: auto; height: auto; aspect-ratio: 1; margin-right: 4px; border-right: 2px solid #fff; border-radius: 50%; object-fit: cover; }
+/* The mark, in white, before the words. */
+.get img { width: 20px; height: 20px; margin-right: 2px; filter: brightness(0) invert(1); }
 .get svg { width: 15px; height: 15px; transition: transform 0.25s var(--out); }
 .get:hover { background: #2530c4; }
 .get:hover svg { transform: translateX(2px); }
@@ -526,7 +525,7 @@ footer a:hover { color: var(--ink); }
   .bar { gap: 12px; height: 54px; padding: 0 7px 0 16px; }
   .brand { font-size: 19px; }
   .mark { width: 26px; height: 26px; }
-  .get { height: 38px; padding: 0 14px 0 0; font-size: 14px; }
+  .get { height: 38px; padding: 0 14px 0 12px; font-size: 14px; }
   .sw-end { position: static; order: -1; padding: 0 20px; color: var(--ink); opacity: 1; transform: none; visibility: visible; }
   .sw-end-title, .sw-end-line { text-shadow: none; }
   .sw-end-line { color: var(--soft); }
