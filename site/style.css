@@ -399,6 +399,9 @@ h2 span { color: var(--blue); }
 .tilt-notes li:nth-child(3) { --turn: -6deg; right: 3%; bottom: 30%; }
 @keyframes float { to { translate: 0 -8px; } }
 
+/* On the assistant screen the last note sits centred on its lower edge. */
+#assistant .tilt-notes li:nth-child(3) { --turn: 0deg; left: 0; right: 0; bottom: 6px; width: max-content; margin-inline: auto; }
+
 /* On the files screen the notes keep clear of the first rows of icons. */
 #files .tilt-notes li:nth-child(1) { top: 58%; }
 #files .tilt-notes li:nth-child(2) { top: 44%; }
@@ -476,6 +479,7 @@ footer a:hover { color: var(--ink); }
   .tilt-screen .chat, .tilt-screen .files { height: 400px; }
   .tilt-notes { position: static; display: grid; gap: 10px; margin-top: 16px; }
   .tilt-notes li { position: static; max-width: none; transform: none; opacity: 1; animation: none; }
+  #assistant .tilt-notes li:nth-child(3) { width: auto; }
   .plate { aspect-ratio: 4 / 3; }
   .swatches { max-width: calc(100% - 20px); overflow-x: auto; }
   .faq { padding: 72px 0; }
