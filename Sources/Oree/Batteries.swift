@@ -19,7 +19,7 @@ final class BatteryFeed {
         let stale: Bool
     }
 
-    /// Four at most: the ones that report a level first.
+    /// Every device with a battery: the ones that report a level first.
     private(set) var devices: [Device] = []
 
     func refresh() {
@@ -42,7 +42,7 @@ final class BatteryFeed {
             // Of the silent ones, a keyboard or a mouse is the likelier wish.
             let silent = all.filter { $0.level == nil && !$0.stale }
                 .sorted { Self.rank($0.icon) < Self.rank($1.icon) }
-            await MainActor.run { self.devices = Array((known + silent).prefix(4)) }
+            await MainActor.run { self.devices = known + silent }
         }
     }
 
@@ -155,15 +155,24 @@ final class BatteryFeed {
 /// No words: the icon says which device, the ring says how full.
 struct BatteryWidget: View {
     let feed: BatteryFeed
+    /// Which four are showing, when there are more than four.
+    @State private var page = 0
+
+    private var pages: Int { max(1, (feed.devices.count + 3) / 4) }
+    private var shown: [BatteryFeed.Device] { Array(feed.devices.dropFirst(min(page, pages - 1) * 4).prefix(4)) }
 
     var body: some View {
-        Widget(title: "Batteries", icon: .battery, count: nil, height: widgetHeight) {
+        Widget(
+            title: "Batteries", icon: .battery, count: nil, height: widgetHeight,
+            link: pages > 1 ? "Next →" : nil,
+            follow: { withAnimation(.smooth(duration: 0.3)) { page = (min(page, pages - 1) + 1) % pages } }
+        ) {
             Grid(horizontalSpacing: 28, verticalSpacing: 14) {
                 ForEach(0..<2, id: \.self) { row in
                     GridRow {
                         ForEach(0..<2, id: \.self) { column in
                             let index = row * 2 + column
-                            Ring(device: index < feed.devices.count ? feed.devices[index] : nil)
+                            Ring(device: index < shown.count ? shown[index] : nil)
                         }
                     }
                 }
