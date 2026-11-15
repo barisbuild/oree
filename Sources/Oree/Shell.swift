@@ -28,3 +28,10 @@ enum Shell {
     }
 
 }
+
+extension URLSession {
+    /// For the few requests Oree makes. It keeps nothing on disk: the shared
+    /// session leaves a folder named after the app in ~/Library/HTTPStorages,
+    /// which Spotlight then offers as a second copy of the app.
+    static let oree = URLSession(configuration: .ephemeral)
+}

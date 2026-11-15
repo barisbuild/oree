@@ -76,7 +76,7 @@ final class WeatherFeed: NSObject, CLLocationManagerDelegate {
             position.latitude, position.longitude
         )
         guard let url = URL(string: address),
-              let (data, _) = try? await URLSession.shared.data(from: url),
+              let (data, _) = try? await URLSession.oree.data(from: url),
               let reply = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let current = reply["current"] as? [String: Any],
               let daily = reply["daily"] as? [String: Any],

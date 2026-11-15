@@ -247,11 +247,11 @@ final class NowPlaying {
     private func lookUpCover(_ store: String) {
         Task.detached(priority: .utility) {
             guard let lookup = URL(string: "https://itunes.apple.com/lookup?id=\(store)"),
-                  let (data, _) = try? await URLSession.shared.data(from: lookup),
+                  let (data, _) = try? await URLSession.oree.data(from: lookup),
                   let reply = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let small = (reply["results"] as? [[String: Any]])?.first?["artworkUrl100"] as? String,
                   let large = URL(string: small.replacingOccurrences(of: "100x100bb", with: "600x600bb")),
-                  let (picture, _) = try? await URLSession.shared.data(from: large),
+                  let (picture, _) = try? await URLSession.oree.data(from: large),
                   let image = NSImage(data: picture)
             else { return }
             await MainActor.run {
