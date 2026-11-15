@@ -425,7 +425,7 @@ struct Widget<Content: View>: View {
                     Button(link, action: follow)
                         .buttonStyle(.plain)
                         .font(.caption)
-                        .foregroundStyle(Theme.accent)
+                        .foregroundStyle(Theme.secondary)
                 }
             }
             .font(.callout)

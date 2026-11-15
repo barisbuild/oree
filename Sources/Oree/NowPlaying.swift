@@ -34,7 +34,6 @@ final class NowPlaying {
 
     private static let folder = URL(fileURLWithPath: NSTemporaryDirectory())
     private static let reader = folder.appendingPathComponent("oree-now-playing.js")
-    private static let sender = folder.appendingPathComponent("oree-media-command.js")
     private static let cover = folder.appendingPathComponent("oree-now-playing-cover")
 
     private static let prelude = """
@@ -72,23 +71,13 @@ final class NowPlaying {
         }
         """
 
-    /// Sends one of the system's media commands, by number; or, given
-    /// "seek" and a number of seconds, moves the playing item there.
-    private static let sendScript = """
-        function run(argv) {
-            \(prelude)
-            if (argv[0] === "seek") {
-                ObjC.bindFunction("MRMediaRemoteSetElapsedTime", ["void", ["double"]]);
-                $.MRMediaRemoteSetElapsedTime(parseFloat(argv[1]));
-            } else {
-                ObjC.bindFunction("MRMediaRemoteSendCommand", ["bool", ["int", "id"]]);
-                $.MRMediaRemoteSendCommand(parseInt(argv[0]), $());
-            }
-            // The command goes out on a queue of its own: stay long enough
-            // for it to leave, or it dies with the script.
-            delay(0.4);
-        }
-        """
+    /// The system's media commands, called in this process: sending, unlike
+    /// reading, needs no help from an Apple program, so it is immediate.
+    private static let remote = dlopen("/System/Library/PrivateFrameworks/MediaRemote.framework/MediaRemote", RTLD_NOW)
+    private typealias SendCommand = @convention(c) (Int32, CFDictionary?) -> Bool
+    private typealias SetElapsed = @convention(c) (Double) -> Void
+    private static let sendCommand = dlsym(remote, "MRMediaRemoteSendCommand").map { unsafeBitCast($0, to: SendCommand.self) }
+    private static let setElapsed = dlsym(remote, "MRMediaRemoteSetElapsedTime").map { unsafeBitCast($0, to: SetElapsed.self) }
 
     init() {
         if Demo.on {
@@ -105,7 +94,6 @@ final class NowPlaying {
             return
         }
         try? Self.readScript.write(to: Self.reader, atomically: true, encoding: .utf8)
-        try? Self.sendScript.write(to: Self.sender, atomically: true, encoding: .utf8)
         read()
         ticker = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] _ in
             self?.read()
@@ -202,7 +190,9 @@ final class NowPlaying {
     }
 
     func toggle() {
-        if Demo.on { isPlaying.toggle(); return }
+        // Shown at once; the next reading confirms it.
+        isPlaying.toggle()
+        if Demo.on { return }
         send(2)
     }
     func next() { send(4) }
@@ -227,21 +217,19 @@ final class NowPlaying {
         elapsed = seconds
         readAt = Date()
         if Demo.on { return }
-        Task.detached(priority: .userInitiated) {
-            _ = Shell.output("/usr/bin/osascript", ["-l", "JavaScript", Self.sender.path, "seek", String(seconds)])
-            try? await Task.sleep(for: .milliseconds(350))
-            await MainActor.run { self.read() }
-        }
+        Self.setElapsed?(seconds)
+        readSoon()
     }
     func previous() { send(5) }
 
-    private func send(_ command: Int) {
-        Task.detached(priority: .userInitiated) {
-            _ = Shell.output("/usr/bin/osascript", ["-l", "JavaScript", Self.sender.path, String(command)])
-            // Show the change now rather than at the next tick.
-            try? await Task.sleep(for: .milliseconds(350))
-            await MainActor.run { self.read() }
-        }
+    private func send(_ command: Int32) {
+        _ = Self.sendCommand?(command, nil)
+        readSoon()
+    }
+
+    /// Read again shortly, once the playing app has acted on a command.
+    private func readSoon() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { self.read() }
     }
 }
 
