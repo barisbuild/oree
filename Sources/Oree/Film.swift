@@ -63,6 +63,11 @@ enum Film {
         await glide(to: CGPoint(x: 640, y: 446), over: 0.7)
         click()
         await hold(0.3)
+        // If the system kept another app in front, the click focuses
+        // nothing: put the field in charge of the typing directly.
+        if !(window.firstResponder is NSTextView), let field = Self.firstField(in: window.contentView) {
+            window.makeFirstResponder(field)
+        }
         // Typed the way a person types: not quite evenly.
         for letter in "tidy my downloads by month" {
             (window.firstResponder as? NSTextView)?.insertText(String(letter), replacementRange: NSRange(location: NSNotFound, length: 0))
@@ -78,6 +83,16 @@ enum Film {
         click()
         await hold(0.8)
         await recorder.stop()
+    }
+
+    /// The first editable text field in a view's tree: the task box.
+    private static func firstField(in view: NSView?) -> NSTextField? {
+        guard let view else { return nil }
+        if let field = view as? NSTextField, field.isEditable { return field }
+        for child in view.subviews {
+            if let found = firstField(in: child) { return found }
+        }
+        return nil
     }
 
     // MARK: Frames
