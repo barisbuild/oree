@@ -205,8 +205,9 @@ final class NowPlaying {
         artist = item["artist"] ?? ""
         album = item["album"] ?? ""
         source = item["app"] ?? ""
-        duration = Double(item["duration"] ?? "") ?? 0
-        elapsed = Double(item["elapsed"] ?? "") ?? 0
+        // An app quitting can report "nan" or "inf" for these: taken as zero.
+        duration = Double(item["duration"] ?? "").flatMap { $0.isFinite && $0 > 0 ? $0 : nil } ?? 0
+        elapsed = Double(item["elapsed"] ?? "").flatMap { $0.isFinite && $0 >= 0 ? $0 : nil } ?? 0
         readAt = Double(item["stamp"] ?? "").map { Date(timeIntervalSince1970: $0) } ?? Date()
         if let bundle = item["bundle"], bundle != sourceBundle {
             sourceBundle = bundle
@@ -424,7 +425,9 @@ private struct Progress: View {
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: playing.isPlaying ? 0.5 : 60)) { context in
-            let share = dragging ?? playing.position(at: context.date) / playing.duration
+            // Kept between 0 and 1 whatever the app reports: a duration of
+            // zero, for a moment between items, would otherwise give NaN.
+            let share = Self.unit(dragging ?? playing.position(at: context.date) / playing.duration)
             VStack(spacing: 3) {
                 GeometryReader { bar in
                     Capsule()
@@ -439,9 +442,12 @@ private struct Progress: View {
                         .contentShape(Rectangle())
                         .gesture(
                             DragGesture(minimumDistance: 0)
-                                .onChanged { drag in dragging = min(1, max(0, drag.location.x / bar.size.width)) }
+                                .onChanged { drag in
+                                    guard bar.size.width > 0 else { return }
+                                    dragging = Self.unit(drag.location.x / bar.size.width)
+                                }
                                 .onEnded { _ in
-                                    if let dragging { playing.seek(to: dragging * playing.duration) }
+                                    if let dragging, playing.duration > 0 { playing.seek(to: dragging * playing.duration) }
                                     dragging = nil
                                 }
                         )
@@ -459,8 +465,12 @@ private struct Progress: View {
         }
     }
 
+    private static func unit(_ value: Double) -> Double {
+        value.isFinite ? min(1, max(0, value)) : 0
+    }
+
     private static func clock(_ seconds: Double) -> String {
-        let whole = Int(seconds.rounded())
+        let whole = seconds.isFinite ? Int(max(0, seconds).rounded()) : 0
         return String(format: "%d:%02d", whole / 60, whole % 60)
     }
 }
