@@ -119,9 +119,11 @@ h2 span { color: var(--blue); }
 .sw-lead h1 .sw-rv { white-space: nowrap; }
 .sw-lead p { max-width: 560px; color: var(--soft); font-size: clamp(16px, 1.35vw, 19px); text-wrap: balance; }
 .sw-lead .button { margin-top: 4px; }
+/* While the story plays the button would only be swept away; it shows
+   where there is no story (narrow screens, reduced motion). */
+.sw-lead .button.sw-rv { display: none; }
 
 .sw-rv { display: inline-block; opacity: 0; transform: translateY(18px); filter: blur(10px); transition: opacity 0.7s var(--out), transform 0.85s var(--out), filter 0.7s var(--out); transition-delay: calc(var(--d, 0) * 80ms); }
-.sw-lead .button.sw-rv { display: inline-flex; }
 .sw-scene.on .sw-rv { opacity: 1; transform: none; filter: none; }
 
 /* ---- The clutter: files left lying on the desktop */
@@ -213,8 +215,30 @@ h2 span { color: var(--blue); }
   transition: width 1s var(--out), height 1s var(--out), top 1s var(--out), border-radius 1s;
 }
 .sw-scene.full .sw-photo { border-radius: 0; transition: border-radius 1s; }
-.sw-scene .sw-cards { transition: opacity 0.5s, filter 0.5s; }
 .sw-scene.said .sw-cards, .sw-scene.said .sw-box { opacity: 0.12 !important; filter: blur(3px); }
+/* Full screen, the widgets and the box draw in smaller and lower, leaving
+   the sky for the words. */
+.sw-cards, .sw-box { transition: inset 1s var(--out), top 1s var(--out), left 1s var(--out), width 1s var(--out), font-size 1s var(--out), opacity 0.5s, filter 0.5s; }
+.sw-scene.full .sw-cards { inset: 60% 17% auto; font-size: 0.82cqw; }
+.sw-scene.full .sw-box { top: 45%; left: 35%; width: 30%; font-size: 0.82cqw; }
+
+.sw-end {
+  position: absolute; left: 0; right: 0; top: 8%; z-index: 5;
+  display: grid; justify-items: center; gap: 14px; padding: 0 20px; text-align: center; color: #fff;
+  opacity: 0; transform: translateY(16px); visibility: hidden;
+  transition: opacity 0.7s var(--out), transform 0.8s var(--out), visibility 0s 0.8s;
+}
+.sw-scene.full:not(.said) .sw-end { opacity: 1; transform: none; visibility: visible; transition-delay: 0.15s; transition-property: opacity, transform, visibility; transition-duration: 0.7s, 0.8s, 0s; }
+.sw-end-title { font-size: clamp(36px, 4.6vw, 64px); font-weight: 500; line-height: 1; letter-spacing: -0.045em; text-shadow: 0 2px 24px rgb(0 10 60 / 0.35); }
+.sw-end-line { font-size: clamp(15px, 1.2vw, 18px); opacity: 0.9; text-shadow: 0 1px 10px rgb(0 10 60 / 0.4); }
+.sw-end-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 8px; }
+.badge {
+  display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 20px; border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.3); background: rgb(14 20 60 / 0.42); backdrop-filter: blur(14px) saturate(1.4);
+  color: #fff; font-size: 15px; font-weight: 500; transition: background 0.2s;
+}
+.badge:hover { background: rgb(14 20 60 / 0.56); }
+.badge svg { width: 18px; height: 18px; }
 
 /* ---- The last word */
 
@@ -483,6 +507,10 @@ footer a:hover { color: var(--ink); }
   .sw { height: auto; }
   .sw-scene { position: static; height: auto; display: grid; gap: 28px; padding: 44px 0 12px; overflow: visible; }
   .sw-lead { position: static; padding: 0 20px; }
+  .sw-lead .button.sw-rv { display: inline-flex; }
+  .sw-end { display: none; }
+  .sw { height: auto; }
+  .sw-lead { order: -1; }
   .sw-items, .sw-rect, .sw-cursor, .sw-close { display: none; }
   .sw-desk { --frame: 1; --photo: 1; position: relative; left: auto; top: auto; width: calc(100% - 24px); height: auto; padding: 170px 10px 10px; margin: 0 auto; transform: none; }
   .sw-desk > * { font-size: 10.5px; }
@@ -515,6 +543,10 @@ footer a:hover { color: var(--ink); }
   .sw { height: auto; }
   .sw-scene { position: static; height: auto; display: grid; gap: 32px; padding: 44px 0 24px; overflow: visible; }
   .sw-lead { position: static; }
+  .sw-lead .button.sw-rv { display: inline-flex; }
+  .sw-end { display: none; }
+  .sw { height: auto; }
+  .sw-lead { order: -1; }
   .sw-items, .sw-rect, .sw-cursor, .sw-close { display: none; }
   .sw-desk { --frame: 1; --photo: 1; position: relative; left: auto; top: auto; margin: 0 auto; transform: none; }
   .sw-box, .sw-cards .w { opacity: 1; }

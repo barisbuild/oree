@@ -342,7 +342,7 @@ function play() {
     // Once the last widget is in place the desktop takes the screen, with
     // the last word over it for a moment.
     scene.classList.add("full", "said");
-    setTimeout(() => scene.classList.remove("said"), 1100);
+    setTimeout(() => scene.classList.remove("said"), 1300);
   };
   requestAnimationFrame(frame);
 }
