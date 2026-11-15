@@ -497,6 +497,18 @@ struct ChatView: View {
 struct EntryView: View {
     let entry: AgentSession.Entry
 
+    /// Agents write Markdown. Bold, italics and code are shown as such;
+    /// a link keeps only its words, since a path is no place to go from
+    /// here; lines and list dashes stay as written.
+    static func styled(_ text: String) -> AttributedString {
+        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        guard var styled = try? AttributedString(markdown: text, options: options) else { return AttributedString(text) }
+        for run in styled.runs where run.link != nil {
+            styled[run.range].link = nil
+        }
+        return styled
+    }
+
     var body: some View {
         switch entry.kind {
         case .user:
@@ -506,7 +518,7 @@ struct EntryView: View {
                 .padding(.vertical, 8)
                 .glass(in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         case .assistant:
-            Text(entry.text)
+            Text(Self.styled(entry.text))
                 .textSelection(.enabled)
         case .tool:
             Text(entry.text)

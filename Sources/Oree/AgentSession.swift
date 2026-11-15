@@ -228,10 +228,15 @@ final class AgentSession: Identifiable {
         return (cache["models"] as? [[String: Any]])?.compactMap { $0["slug"] as? String } ?? []
     }
 
-    /// The model to ask Codex for. Nil leaves Codex's own choice alone,
-    /// which is right until the service says the account may not use it.
+    /// Desktop chores want a quick answer more than deep thought, so Oree
+    /// asks for Codex's fast model while the account lists it.
+    private static let preferred = "gpt-6-luna"
+
+    /// The model to ask Codex for: the fast one if the account has it, else
+    /// one settled on after a refusal. Nil leaves Codex's own choice alone.
     static func codexModel() -> String? {
-        replacement
+        if !refused.contains(preferred), listed.contains(preferred) { return preferred }
+        return replacement
     }
 
     /// The service refused a model: note which, and choose the next listed.
@@ -240,7 +245,7 @@ final class AgentSession: Identifiable {
         // "The 'some-model' model is not supported …": the name is quoted.
         let parts = message.split(separator: "'")
         if parts.count >= 3 { refused.insert(String(parts[1])) }
-        if let replacement { refused.insert(replacement) }
+        if let current = codexModel() { refused.insert(current) }
         replacement = listed.first { !refused.contains($0) }
         return replacement != nil
     }
@@ -251,7 +256,9 @@ final class AgentSession: Identifiable {
         The user asks you to find, organise, rename, move and summarise files and folders, \
         and to answer questions. Work from the home folder. \
         Move things to the Trash rather than deleting them. \
-        Keep answers short and say plainly what you changed.
+        Keep answers short and say plainly what you changed. \
+        Write the way a person talks in a chat: plain sentences, a short list only when it helps, \
+        no headings, no tables and no links to file paths.
         """
 
     private func ended() {
