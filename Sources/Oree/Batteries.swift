@@ -155,7 +155,7 @@ private struct Ring: View {
                     IconSwap(first: device.icon, second: .bolt, secondColour: NSColor(colour))
                         .frame(width: 24, height: 24)
                 } else {
-                    IconView(device.icon, size: 24)
+                    IconView(device.icon, size: 26)
                         .opacity(device.level == nil ? 0.45 : 1)
                 }
             }
@@ -201,7 +201,7 @@ private final class IconSwapView: NSView {
     /// A layer of one colour, cut to the icon's shape.
     private static func paint(_ layer: CALayer, with icon: Icon, colour: NSColor) {
         let shape = CALayer()
-        shape.contents = icon.image
+        shape.contents = icon.symbolImage(pointSize: 44)
         shape.contentsGravity = .resizeAspect
         layer.backgroundColor = colour.cgColor
         layer.mask = shape
@@ -246,3 +246,4 @@ private final class IconSwapView: NSView {
         return turn
     }
 }
+

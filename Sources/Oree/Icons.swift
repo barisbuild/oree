@@ -78,6 +78,74 @@ enum Icon: CaseIterable {
     private static var cache: [Icon: NSImage] = [:]
 }
 
+extension Icon {
+    /// Apple's SF Symbols name for this icon. The app draws every icon from
+    /// SF Symbols, which Apple licenses for the interfaces of apps on its
+    /// platforms; the Hugeicons drawings above are kept for the website.
+    var symbol: String {
+        switch self {
+        case .arrowLeft: "chevron.left"
+        case .arrowUp: "arrow.up"
+        case .folder: "folder"
+        case .image: "photo"
+        case .settings: "gearshape"
+        case .mail: "envelope"
+        case .checklist: "checklist"
+        case .timer: "timer"
+        case .code: "chevron.left.forwardslash.chevron.right"
+        case .computer: "desktopcomputer"
+        case .activity: "waveform.path.ecg"
+        case .pullRequest: "arrow.triangle.pull"
+        case .cancel: "xmark"
+        case .cancelCircle: "xmark.circle"
+        case .chart: "chart.bar"
+        case .archive: "archivebox"
+        case .folderAdd: "folder.badge.plus"
+        case .text: "text.alignleft"
+        case .pencil: "pencil"
+        case .trash: "trash"
+        case .layers: "square.stack.3d.up"
+        case .bell: "bell"
+        case .play: "play.fill"
+        case .pause: "pause.fill"
+        case .arrowRight: "chevron.right"
+        case .calendar: "calendar"
+        case .music: "music.note"
+        case .battery: "battery.75percent"
+        case .headphones: "headphones"
+        case .keyboard: "keyboard"
+        case .mouse: "magicmouse"
+        case .laptop: "laptopcomputer"
+        case .sun: "sun.max"
+        case .cloud: "cloud"
+        case .sunCloud: "cloud.sun"
+        case .rain: "cloud.rain"
+        case .snow: "cloud.snow"
+        case .wind: "wind"
+        case .storm: "cloud.bolt.rain"
+        case .moon: "moon.stars"
+        case .bluetooth: "wave.3.right"
+        case .phone: "iphone"
+        case .earbuds: "airpodspro"
+        case .earbudsCase: "airpodspro.chargingcase.wireless"
+        case .bolt: "bolt.fill"
+        case .drive: "externaldrive"
+        case .home: "house"
+        case .search: "magnifyingglass"
+        case .tablet: "ipad"
+        case .refresh: "arrow.clockwise"
+        case .cursor: "cursorarrow.click"
+        case .checkCircle: "checkmark.circle"
+        }
+    }
+
+    /// The symbol as an image, for places that need one rather than a view.
+    func symbolImage(pointSize: CGFloat = 22) -> NSImage {
+        NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
+            .withSymbolConfiguration(.init(pointSize: pointSize, weight: .regular)) ?? image
+    }
+}
+
 struct IconView: View {
     let icon: Icon
     var size: CGFloat = 16
@@ -88,9 +156,8 @@ struct IconView: View {
     }
 
     var body: some View {
-        Image(nsImage: icon.image)
-            .renderingMode(.template)
-            .resizable()
+        Image(systemName: icon.symbol)
+            .font(.system(size: size * 0.92, weight: .regular))
             .frame(width: size, height: size)
     }
 }
