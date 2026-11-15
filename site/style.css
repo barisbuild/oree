@@ -597,3 +597,6 @@ footer a:hover { color: var(--ink); }
 .legal td { padding: 12px 12px 12px 0; vertical-align: top; border-bottom: 1px solid var(--line); }
 .legal td:first-child { color: var(--ink); font-weight: 500; white-space: nowrap; }
 @media (max-width: 640px) { .legal td:first-child { white-space: normal; } .legal table { font-size: 14px; } }
+
+/* Links inside an answer, in the brand blue. */
+.faq details a { color: var(--blue); text-decoration: underline; text-underline-offset: 3px; }
