@@ -352,6 +352,8 @@ function play() {
     heroP = elapsed < SWEEP_LENGTH ? 0.36 * elapsed / SWEEP_LENGTH : 0.36 + 0.64 * clamp((elapsed - SWEEP_LENGTH) / REST_LENGTH);
     tell();
     if (heroP < 1) requestAnimationFrame(frame);
+    // Half a second after the last word, the desktop takes the screen.
+    else setTimeout(() => scene.classList.add("full"), 500);
   };
   requestAnimationFrame(frame);
 }
@@ -568,111 +570,129 @@ for (const button of $$("[data-focus]")) button.addEventListener("click", toggle
 // Reminders can be ticked off, as they can in the app.
 for (const row of $$(".todo li")) row.addEventListener("click", () => row.classList.toggle("done"));
 
-// ---- Files: drag a rectangle across the icons, as on any desktop
+// ---- Files: a file dragged into a folder, the folder opened in place
 
 const files = $("[data-files]");
 const iconGrid = $("[data-icons]", files);
-const sweep = $("[data-sweep]", files);
 const pointer = $("[data-pointer]", files);
 const count = $("[data-count]", files);
-iconGrid.innerHTML = [
+const path = $("[data-path]", files);
+const where = $("[data-where]", files);
+const DESKTOP = [
   ["Brand", ""], ["Invoices", ""], ["Trip notes", "doc"], ["Harbour.jpg", "pic"], ["Contract.pdf", "doc"],
-  ["Sketches", ""], ["Dunes.jpg", "pic"], ["Budget", "doc"], ["Archive", ""], ["Morning.jpg", "pic"],
-  ["Letter", "doc"], ["Site photos", ""], ["Receipts", ""], ["Poster.jpg", "pic"], ["Notes", "doc"],
-].map(([name, kind]) => `<div class="icon ${kind}"><b></b><span>${name}</span></div>`).join("");
-const fileIcons = [...iconGrid.children];
+  ["Sketches", ""], ["Dunes.jpg", "pic"], ["Budget", "doc"], ["Archive", ""], ["Poster.jpg", "pic"],
+  ["Letter", "doc"], ["Site photos", ""], ["Receipts", ""], ["Notes", "doc"],
+];
+const SITE_PHOTOS = [
+  ["Harbour.jpg", "pic"], ["Pier.jpg", "pic"], ["Lighthouse.jpg", "pic"], ["Dock.jpg", "pic"], ["Rocks.jpg", "pic"], ["Survey.pdf", "doc"],
+];
 
-function pick(area, keep = new Set()) {
-  const box = files.getBoundingClientRect();
-  let picked = 0;
-  for (const item of fileIcons) {
-    const at = item.getBoundingClientRect();
-    const inside = area
-      && at.left - box.left < area.x + area.width && at.right - box.left > area.x
-      && at.top - box.top < area.y + area.height && at.bottom - box.top > area.y;
-    const on = inside || keep.has(item);
-    item.classList.toggle("picked", on);
-    picked += on ? 1 : 0;
+function show(items, place) {
+  iconGrid.innerHTML = items.map(([name, kind]) => `<div class="icon ${kind}" data-name="${name}"><b></b><span>${name}</span></div>`).join("");
+  where.textContent = place;
+  path.classList.toggle("up", place !== "Desktop");
+  count.textContent = `${items.length} items`;
+}
+const named = (name) => $(`[data-name="${name}"]`, iconGrid);
+
+/** The middle of an element, in the files view's own untilted pixels. */
+function middle(element) {
+  let x = element.offsetWidth / 2;
+  let y = element.offsetHeight / 2;
+  for (let at = element; at && at !== files; at = at.offsetParent) {
+    x += at.offsetLeft;
+    y += at.offsetTop;
   }
-  count.textContent = picked ? `${picked} selected` : "Drag to select";
+  return { x, y };
 }
 
-function showSweep(area) {
-  sweep.style.display = area ? "block" : "none";
-  if (area) Object.assign(sweep.style, { left: `${area.x}px`, top: `${area.y}px`, width: `${area.width}px`, height: `${area.height}px` });
+let at = { x: 40, y: 60 };
+/** Moves the pointer to `to`; `during` hears where it is on each frame. */
+function glide(to, length, during) {
+  const from = at;
+  const began = performance.now();
+  return new Promise((done) => {
+    const step = (now) => {
+      const t = ease(span(now - began, 0, length));
+      at = { x: mix(from.x, to.x, t), y: mix(from.y, to.y, t) };
+      pointer.style.transform = `translate(${at.x.toFixed(1)}px, ${at.y.toFixed(1)}px)`;
+      during?.(at, t);
+      if (t < 1) requestAnimationFrame(step); else done();
+    };
+    requestAnimationFrame(step);
+  });
 }
 
-let touched = false;
-files.addEventListener("pointerdown", (down) => {
-  touched = true;
-  pointer.style.opacity = 0;
-  const box = files.getBoundingClientRect();
-  const start = { x: down.clientX - box.left, y: down.clientY - box.top };
-  const keep = new Set(down.metaKey ? fileIcons.filter((item) => item.classList.contains("picked")) : []);
-  const onIcon = down.target.closest(".icon");
-  let moved = false;
-  files.setPointerCapture(down.pointerId);
+async function turnTo(items, place) {
+  iconGrid.classList.add("swap");
+  await wait(220);
+  show(items, place);
+  iconGrid.classList.remove("swap");
+}
 
-  const move = (event) => {
-    const x = clamp(event.clientX - box.left, 0, box.width);
-    const y = clamp(event.clientY - box.top, 0, box.height);
-    if (Math.hypot(x - start.x, y - start.y) < 4 && !moved) return;
-    moved = true;
-    const area = { x: Math.min(start.x, x), y: Math.min(start.y, y), width: Math.abs(x - start.x), height: Math.abs(y - start.y) };
-    showSweep(area);
-    pick(area, keep);
-  };
-  const up = () => {
-    files.removeEventListener("pointermove", move);
-    showSweep(null);
-    if (!moved) {
-      // A click: on an icon it picks that one, on empty space it lets go.
-      if (onIcon) {
-        if (down.metaKey && keep.has(onIcon)) keep.delete(onIcon); else keep.add(onIcon);
-      }
-      pick(null, onIcon ? keep : new Set());
-    }
-  };
-  files.addEventListener("pointermove", move);
-  files.addEventListener("pointerup", up, { once: true });
-  files.addEventListener("pointercancel", up, { once: true });
-});
-
-/** Until someone tries it, a pointer shows how: over and over, unhurried. */
+/** While in view: a file goes into a folder, the folder opens, and back. */
 async function demonstrate() {
   if (demonstrate.running || still) return;
   demonstrate.running = true;
-  while (!touched && demonstrate.inView) {
-    const box = files.getBoundingClientRect();
-    const from = { x: box.width * 0.05, y: 54 };
-    const to = { x: box.width * (0.5 + Math.random() * 0.4), y: box.height * (0.5 + Math.random() * 0.3) };
+  while (demonstrate.inView) {
+    show(DESKTOP, "Desktop");
     pointer.style.opacity = 1;
-    const began = performance.now();
-    await new Promise((done) => {
-      const step = (now) => {
-        if (touched) return done();
-        const t = ease(span(now - began, 0, 1500));
-        const area = { x: from.x, y: from.y, width: (to.x - from.x) * t, height: (to.y - from.y) * t };
-        pointer.style.transform = `translate(${from.x + area.width}px, ${from.y + area.height}px)`;
-        showSweep(area);
-        pick(area);
-        if (t < 1) requestAnimationFrame(step); else done();
-      };
-      requestAnimationFrame(step);
+    await wait(600);
+    const file = named("Harbour.jpg");
+    const folder = named("Site photos");
+    await glide(middle(file), 800);
+    file.classList.add("picked");
+    await wait(250);
+
+    // Picked up: a copy follows the pointer, the original stays faint.
+    const ghost = file.cloneNode(true);
+    ghost.classList.add("ghost");
+    files.append(ghost);
+    const carry = (point) => (ghost.style.transform = `translate(${(point.x - ghost.offsetWidth / 2).toFixed(1)}px, ${(point.y - ghost.offsetHeight / 2).toFixed(1)}px)`);
+    carry(at);
+    file.classList.add("lifted");
+    await glide(middle(folder), 1300, (point, t) => {
+      carry(point);
+      folder.classList.toggle("target", t > 0.7);
     });
-    await wait(900);
-    if (touched) break;
-    showSweep(null);
-    await wait(1600);
-    if (touched) break;
-    pick(null);
-    pointer.style.transform = `translate(${from.x}px, ${from.y}px)`;
-    await wait(700);
+
+    // Dropped: in it goes.
+    ghost.classList.add("drop");
+    folder.classList.remove("target");
+    folder.classList.add("took");
+    file.classList.add("gone");
+    await wait(450);
+    // Its place stays empty, as on a desktop: nothing else moves.
+    ghost.remove();
+    count.textContent = `${DESKTOP.length - 1} items`;
+    await wait(800);
+
+    // A double click opens it where it is, not in a window.
+    folder.classList.add("picked");
+    await wait(130);
+    folder.classList.remove("picked");
+    await wait(100);
+    folder.classList.add("picked");
+    await wait(250);
+    await turnTo(SITE_PHOTOS, "Site photos");
+    named("Harbour.jpg").classList.add("picked");
+    await wait(2200);
+
+    // And one click goes back up.
+    await glide({ x: path.offsetLeft + 8, y: path.offsetTop + path.offsetHeight / 2 }, 900);
+    path.classList.add("press");
+    await wait(160);
+    path.classList.remove("press");
+    await turnTo(DESKTOP.filter(([name]) => name !== "Harbour.jpg"), "Desktop");
+    await wait(1800);
+    iconGrid.classList.add("swap");
+    await wait(220);
+    iconGrid.classList.remove("swap");
   }
-  showSweep(null);
   pointer.style.opacity = 0;
   demonstrate.running = false;
 }
+show(DESKTOP, "Desktop");
 
 // ---- Assistant: one short conversation, played while it is in view
 

@@ -90,7 +90,7 @@ h2 span { color: var(--blue); }
    sets each moving part's place from how far the page has scrolled; this
    keeps only looks, the arrivals on load and the idle drift. */
 
-.sw { position: relative; height: 100vh; }
+.sw { position: relative; height: calc(100vh - 64px); }
 
 .sw-scene {
   position: sticky;
@@ -171,8 +171,9 @@ h2 span { color: var(--blue); }
   position: absolute;
   left: 50%;
   top: 50%;
-  width: min(1120px, 100vw - 64px, (100vh - 64px - 40px) * 1.6);
-  aspect-ratio: 16 / 10;
+  --w: min(1120px, 100vw - 64px, (100vh - 64px - 40px) * 1.6);
+  width: var(--w);
+  height: calc(var(--w) / 1.6);
   container-type: inline-size;
   border-radius: 14px;
   background: rgb(243 243 246 / var(--frame));
@@ -204,6 +205,18 @@ h2 span { color: var(--blue); }
 .sw-cards { position: absolute; inset: 44.5% 9% auto; z-index: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8em; }
 .sw-cards .w { font-size: 0.86em; opacity: 0; will-change: transform, opacity; transition: box-shadow 0.3s, outline-color 0.3s; outline: 2px solid transparent; outline-offset: 2px; }
 .sw-cards .w.swept { outline-color: rgb(47 59 217 / 0.55); box-shadow: 0 0 0 4px rgb(47 59 217 / 0.08); }
+
+/* ---- Once the last word has been said, the desktop fills the screen:
+   the full height of the window, from under the header to the fold. */
+.sw-scene.full { overflow: visible; }
+.sw-scene.full .sw-desk {
+  width: 100vw; height: 100vh; top: calc(50% - 32px); border-radius: 0; box-shadow: none;
+  transition: width 1s var(--out), height 1s var(--out), top 1s var(--out), border-radius 1s;
+}
+.sw-scene.full .sw-photo { border-radius: 0; transition: border-radius 1s; }
+.sw-scene.full .sw-close { opacity: 0 !important; transition: opacity 0.6s; }
+.sw-scene.full .sw-cards { opacity: 1 !important; filter: none !important; transition: opacity 0.8s, filter 0.8s; }
+.sw-scene.full .sw-box { opacity: 1 !important; transition: opacity 0.8s; }
 
 /* ---- The last word */
 
@@ -332,7 +345,7 @@ h2 span { color: var(--blue); }
 .inset.bleed { padding: clamp(18px, 3vw, 40px) clamp(18px, 3vw, 40px) 0; }
 .app { position: relative; border-radius: 18px 18px 0 0; background: var(--app); color: var(--app-text); box-shadow: 0 24px 60px rgb(20 20 60 / 0.26); overflow: hidden; }
 
-.files { height: 400px; padding: 18px 20px; user-select: none; cursor: crosshair; touch-action: none; }
+.files { height: 400px; padding: 18px 20px; user-select: none; }
 .files .bar { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--app-soft); }
 .files .bar span { display: inline-flex; align-items: center; gap: 6px; }
 .files .count { padding: 4px 10px; border-radius: 999px; background: rgb(16 16 30 / 0.08); font-variant-numeric: tabular-nums; }
@@ -345,7 +358,20 @@ h2 span { color: var(--blue); }
 .icon span { max-width: 76px; padding: 1px 6px; border-radius: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: background 0.15s; }
 .icon.picked b { background: rgb(16 16 30 / 0.12); }
 .icon.picked span { background: var(--app-blue); color: #fff; }
-.sweep { position: absolute; display: none; border: 1px solid rgb(47 59 217 / 0.55); background: rgb(47 59 217 / 0.1); pointer-events: none; }
+/* The drag-into-a-folder story. */
+.files .path em { font-style: normal; }
+.files .path:not(.up) svg { display: none; }
+.files .path.press { opacity: 0.5; }
+.icons { transition: opacity 0.22s; }
+.icons.swap { opacity: 0; }
+.icon.lifted { opacity: 0.35; }
+.icon.gone { opacity: 0; transition: opacity 0.3s; }
+.icon.target b { background: rgb(47 59 217 / 0.14); box-shadow: 0 0 0 2px var(--app-blue) inset; }
+.icon.took b { animation: took 0.45s var(--out); }
+@keyframes took { 40% { scale: 1.14; } }
+.ghost { position: absolute; left: 0; top: 0; z-index: 3; width: 78px; pointer-events: none; opacity: 0.92; }
+.ghost.drop { scale: 0.3; opacity: 0; transition: scale 0.35s var(--out), opacity 0.35s; }
+.files .pointer { z-index: 4; }
 /* The pointer that shows how, until a real one takes over. */
 .pointer { position: absolute; left: 0; top: 0; width: 15px; height: 21px; opacity: 0; pointer-events: none; transition: opacity 0.3s; background: #101014; clip-path: polygon(0 0, 0 78%, 26% 60%, 46% 100%, 62% 92%, 43% 55%, 76% 55%); filter: drop-shadow(0 0 1px #fff) drop-shadow(0 1px 2px rgb(0 0 0 / 0.3)); }
 
@@ -459,7 +485,7 @@ footer a:hover { color: var(--ink); }
   .sw-scene { position: static; height: auto; display: grid; gap: 28px; padding: 44px 0 12px; overflow: visible; }
   .sw-lead { position: static; padding: 0 20px; }
   .sw-items, .sw-rect, .sw-cursor, .sw-close { display: none; }
-  .sw-desk { --frame: 1; --photo: 1; position: relative; left: auto; top: auto; width: calc(100vw - 24px); aspect-ratio: auto; padding: 170px 10px 10px; margin: 0 auto; transform: none; }
+  .sw-desk { --frame: 1; --photo: 1; position: relative; left: auto; top: auto; width: calc(100vw - 24px); height: auto; padding: 170px 10px 10px; margin: 0 auto; transform: none; }
   .sw-desk > * { font-size: 10.5px; }
   .sw-photo { height: 240px; }
   .sw-menubar { font-size: 10px; }
