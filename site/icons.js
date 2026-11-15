@@ -40,5 +40,6 @@ export const icons = {
 "chevronDown": "<path d=\"m7 10 5 5 5-5\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>",
 "mediaBack": "<path d=\"M11 7.2v9.6L4.6 12 11 7.2Zm9 0v9.6L13.6 12 20 7.2Z\" fill=\"currentColor\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\"/>",
 "mediaForward": "<path d=\"M13 7.2v9.6l6.4-4.8L13 7.2Zm-9 0v9.6l6.4-4.8L4 7.2Z\" fill=\"currentColor\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\"/>",
-"mediaPause": "<rect x=\"6.2\" y=\"4.8\" width=\"4\" height=\"14.4\" rx=\"1.3\" fill=\"currentColor\"/><rect x=\"13.8\" y=\"4.8\" width=\"4\" height=\"14.4\" rx=\"1.3\" fill=\"currentColor\"/>"
+"mediaPause": "<rect x=\"6.2\" y=\"4.8\" width=\"4\" height=\"14.4\" rx=\"1.3\" fill=\"currentColor\"/><rect x=\"13.8\" y=\"4.8\" width=\"4\" height=\"14.4\" rx=\"1.3\" fill=\"currentColor\"/>",
+"arrowLong": "<path d=\"M4 12h15m-6-6.5L19.5 12 13 18.5\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"
 };
