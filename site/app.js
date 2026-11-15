@@ -394,9 +394,11 @@ function print(canvas, cell = 3) {
   else drawScene(context, columns, rows, scenes[look === "photo" ? "fjord" : look]);
 
   // The plate shows the whole picture, so it keeps more before it thins.
+  // The hero keeps a little more, so its picture reads before it thins.
   const whole = "resolve" in canvas.dataset;
-  const thinFrom = whole ? 0.74 : 0.5;
-  const shadeFrom = whole ? 0.58 : 0.34;
+  const hero = "heroPicture" in canvas.dataset;
+  const thinFrom = whole ? 0.74 : hero ? 0.62 : 0.5;
+  const shadeFrom = whole ? 0.58 : hero ? 0.46 : 0.34;
   const image = context.getImageData(0, 0, columns, rows);
   const pixels = image.data;
   for (let y = 0; y < rows; y++) {
