@@ -154,8 +154,9 @@ struct Composer: View {
                 }
                 Button(action: send) {
                     IconView(.arrowUp, size: 15)
-                        .frame(width: 26, height: 26)
-                        .background(canSend ? Theme.accent : Theme.panel, in: RoundedRectangle(cornerRadius: 7))
+                        .foregroundStyle(canSend ? Color.white : Theme.secondary)
+                        .frame(width: 28, height: 28)
+                        .glass(tinted: canSend ? Theme.accent : nil, in: Circle())
                 }
                 .buttonStyle(.plain)
                 .disabled(!canSend)

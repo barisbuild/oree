@@ -42,9 +42,32 @@ private struct GlassSurface<S: Shape>: ViewModifier {
     }
 }
 
+/// Glass with a colour through it, for a control that is ready to use;
+/// without a colour it is plain glass. Before macOS 26, a flat fill.
+private struct TintedGlass<S: Shape>: ViewModifier {
+    let tint: Color?
+    let shape: S
+
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, *) {
+            content.glassEffect(tint.map { .regular.tint($0).interactive() } ?? .regular, in: shape)
+        } else if let tint {
+            content.background(tint, in: shape)
+        } else {
+            content
+                .background(.ultraThinMaterial, in: shape)
+                .overlay(shape.stroke(Theme.hairline))
+        }
+    }
+}
+
 extension View {
     func glass(in shape: some Shape) -> some View {
         modifier(GlassSurface(shape: shape))
+    }
+
+    func glass(tinted tint: Color?, in shape: some Shape) -> some View {
+        modifier(TintedGlass(tint: tint, shape: shape))
     }
 
     /// The card every widget sits on. It is a plain surface, not glass:

@@ -40,9 +40,10 @@ agents you already have, signed in with your own account:
 | Claude Code | `npm install -g @anthropic-ai/claude-code` | `claude` |
 | Codex | `npm install -g @openai/codex` | `codex login` |
 
-Claude Code asks before it changes a file or runs a command, and Oree shows
-you the question. Codex has no way to ask first, so Oree runs it read-only:
-it can look around the Mac but change nothing.
+Both agents ask before they change anything, and Oree shows you the
+question with Allow and Don't allow. Claude Code asks before a command or an
+edit; Codex runs in a read-only sandbox and asks before any command or change
+that would write.
 
 ## Build and run
 

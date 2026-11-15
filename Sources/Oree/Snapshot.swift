@@ -38,14 +38,17 @@ enum Snapshot {
         let file = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("oree-click")
         let request = (try? String(contentsOf: file, encoding: .utf8)) ?? ""
         // "type some words": put the words in the focused field and press Return.
-        if request.hasPrefix("type ") {
+        // "fill some words": the same without Return.
+        if request.hasPrefix("type ") || request.hasPrefix("fill ") {
             let words = request.dropFirst(5).trimmingCharacters(in: .newlines)
+            let submit = request.hasPrefix("type ")
             NSApp.activate(ignoringOtherApps: true)
             Self.mainDesktop?.makeKey()
             // Give the window a moment to become key and focus its field.
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                 let editor = NSApp.keyWindow?.firstResponder as? NSTextView
                 editor?.insertText(words, replacementRange: editor?.selectedRange() ?? NSRange())
+                guard submit else { return }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                     editor?.doCommand(by: #selector(NSResponder.insertNewline(_:)))
                 }

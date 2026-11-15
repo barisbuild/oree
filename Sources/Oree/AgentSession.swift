@@ -23,9 +23,9 @@ enum Agent: String, CaseIterable, Identifiable {
 /// line on its stdin, each event one JSON line on its stdout, and it asks
 /// over the same stream before a tool call that needs permission.
 ///
-/// Codex runs once per turn and is resumed by thread for the next. It has
-/// no way to ask first, so its sandbox is what holds it: it may read around
-/// the Mac but change nothing.
+/// Codex runs as an app server for the whole conversation and speaks
+/// JSON-RPC over the same pipes. Its sandbox lets it read but not write;
+/// anything that would change a file comes to the user as a request first.
 @Observable
 final class AgentSession: Identifiable {
     enum State { case idle, working, waiting, ended }
@@ -42,6 +42,9 @@ final class AgentSession: Identifiable {
         let id: String
         let summary: String
         fileprivate let input: [String: Any]
+        /// Codex only: the request to answer, and what it asked for.
+        fileprivate var request: Any? = nil
+        fileprivate var method = ""
     }
 
     let id = UUID()
@@ -62,12 +65,21 @@ final class AgentSession: Identifiable {
     @ObservationIgnored private var asksAgain = false
     /// Codex's name for this conversation, once it has given one.
     @ObservationIgnored private var thread: String?
+    /// Messages typed before Codex had a conversation to put them in.
+    @ObservationIgnored private var early: [String] = []
+    /// Requests sent to Codex and not yet answered, by id.
+    @ObservationIgnored private var calls: [Int: String] = [:]
+    @ObservationIgnored private var nextCall = 0
 
     init(agent: Agent, folder: URL) {
         self.agent = agent
         self.folder = folder
-        if agent == .claude {
+        switch agent {
+        case .claude:
             run("exec claude --print --input-format stream-json --output-format stream-json --verbose --permission-prompt-tool stdio --append-system-prompt '\(Self.desktopBrief)'")
+        case .codex:
+            run("exec codex app-server")
+            call("initialize", ["clientInfo": ["name": "oree", "title": "Oree", "version": "1"]])
         }
     }
 
@@ -81,32 +93,54 @@ final class AgentSession: Identifiable {
         case .claude:
             write(["type": "user", "message": ["role": "user", "content": text]])
         case .codex:
-            askCodex(thread == nil ? Self.desktopBrief + "\n\n" + text : text)
+            if thread == nil { early.append(text) } else { askCodex(text) }
         }
     }
 
-    /// Run one Codex turn. The prompt goes in on stdin (`-`), so nothing in
-    /// it meets the shell.
+    /// Start one Codex turn. Everyday chores on a desktop need little
+    /// thought, so it is asked to reason lightly and answer sooner.
     private func askCodex(_ prompt: String) {
+        guard let thread else { return }
         lastPrompt = prompt
-        let model = Self.codexModel().map { " -m \($0)" } ?? ""
-        let options = "--json --skip-git-repo-check -c 'sandbox_mode=\"read-only\"'\(model) -"
-        run(thread.map { "exec codex exec resume \($0) \(options)" } ?? "exec codex exec \(options)")
-        write(text: prompt)
-        try? input.fileHandleForWriting.close()
+        var params: [String: Any] = [
+            "threadId": thread,
+            "input": [["type": "text", "text": prompt]],
+            "effort": "low",
+        ]
+        if let model = Self.codexModel() {
+            params["model"] = model
+            self.model = model
+        }
+        call("turn/start", params)
+    }
+
+    /// A JSON-RPC request to Codex; the answer comes back by id.
+    private func call(_ method: String, _ params: [String: Any]) {
+        nextCall += 1
+        calls[nextCall] = method
+        write(["id": nextCall, "method": method, "params": params])
     }
 
     /// Answer a tool call the agent is waiting on.
     func resolve(_ approval: Approval, allow: Bool) {
         guard let index = approvals.firstIndex(where: { $0.id == approval.id }) else { return }
         approvals.remove(at: index)
-        let decision: [String: Any] = allow
-            ? ["behavior": "allow", "updatedInput": approval.input]
-            : ["behavior": "deny", "message": "The user denied this action."]
-        write([
-            "type": "control_response",
-            "response": ["subtype": "success", "request_id": approval.id, "response": decision],
-        ])
+        if let request = approval.request {
+            // Codex: a further permission is granted for this turn only;
+            // a command or a file change is accepted or declined.
+            let result: [String: Any] = approval.method == "item/permissions/requestApproval"
+                ? ["permissions": allow ? approval.input : [:], "scope": "turn"]
+                : ["decision": allow ? "accept" : "decline"]
+            write(["id": request, "result": result])
+        } else {
+            let decision: [String: Any] = allow
+                ? ["behavior": "allow", "updatedInput": approval.input]
+                : ["behavior": "deny", "message": "The user denied this action."]
+            write([
+                "type": "control_response",
+                "response": ["subtype": "success", "request_id": approval.id, "response": decision],
+            ])
+        }
         entries.append(Entry(kind: .tool, text: "\(allow ? "Allowed" : "Denied") · \(approval.summary)"))
         if state == .waiting, approvals.isEmpty { state = .working }
     }
@@ -176,14 +210,14 @@ final class AgentSession: Identifiable {
         try? input.fileHandleForWriting.write(contentsOf: line)
     }
 
-    private func write(text: String) {
-        try? input.fileHandleForWriting.write(contentsOf: Data(text.utf8))
-    }
-
     /// Models the service has refused this account, and the one settled on
-    /// in their place. Shared by every conversation.
+    /// in their place. Shared by every conversation, and remembered across
+    /// launches so a refused model costs one failed turn, not one a launch.
     private static var refused: Set<String> = []
-    private static var replacement: String?
+    private static var replacement: String? {
+        get { UserDefaults.standard.string(forKey: "codexModel") }
+        set { UserDefaults.standard.set(newValue, forKey: "codexModel") }
+    }
 
     /// The models Codex lists for the signed-in account.
     private static var listed: [String] {
@@ -221,13 +255,6 @@ final class AgentSession: Identifiable {
         """
 
     private func ended() {
-        // A turn refused over its model is put again with another model.
-        if asksAgain {
-            asksAgain = false
-            state = .working
-            askCodex(lastPrompt)
-            return
-        }
         approvals.removeAll()
         let unfinished = state == .working || state == .waiting
         if unfinished {
@@ -237,9 +264,8 @@ final class AgentSession: Identifiable {
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             entries.append(Entry(kind: .error, text: detail.isEmpty ? "\(agent.name) stopped." : detail))
         }
-        // Codex leaves after every turn and can be resumed; Claude Code
-        // leaving means the conversation is over.
-        state = agent == .codex && thread != nil ? .idle : .ended
+        // Either agent leaving means the conversation is over.
+        state = .ended
     }
 
     private func consume(_ data: Data) {
@@ -321,54 +347,132 @@ final class AgentSession: Identifiable {
         return name
     }
 
-    // MARK: Codex's events
+    // MARK: Codex's messages
 
-    private func handleCodex(_ event: [String: Any]) {
-        switch event["type"] as? String {
-        case "thread.started":
-            thread = event["thread_id"] as? String
-        case "item.completed":
-            guard let item = event["item"] as? [String: Any] else { break }
+    private func handleCodex(_ message: [String: Any]) {
+        let method = message["method"] as? String
+        let params = message["params"] as? [String: Any] ?? [:]
+        if let id = message["id"] {
+            if let method {
+                codexAsks(method, id: id, params: params)
+            } else if let number = (id as? NSNumber)?.intValue {
+                codexAnswered(calls.removeValue(forKey: number), message)
+            }
+            return
+        }
+        switch method {
+        case "turn/started":
+            break
+        case "item/started":
+            // Commands and changes are noted as they begin, before any
+            // request to allow them, the way Claude Code's are.
+            guard let item = params["item"] as? [String: Any] else { break }
             switch item["type"] as? String {
-            case "agent_message":
-                if let text = item["text"] as? String, !text.isEmpty {
-                    entries.append(Entry(kind: .assistant, text: text))
-                }
-            case "command_execution":
+            case "commandExecution":
                 if let command = item["command"] as? String {
-                    entries.append(Entry(kind: .tool, text: "Shell: \(command)"))
+                    entries.append(Entry(kind: .tool, text: "Shell: \(Self.unwrap(command))"))
                 }
-            case "file_change":
+            case "fileChange":
                 let paths = (item["changes"] as? [[String: Any]] ?? []).compactMap { $0["path"] as? String }
                 entries.append(Entry(kind: .tool, text: "Edit: \(paths.joined(separator: ", "))"))
-            case "error":
-                // Notes about the setup, not about the task.
-                break
             default:
                 break
             }
-        case "error", "turn.failed":
-            let message = event["message"] as? String
-                ?? (event["error"] as? [String: Any])?["message"] as? String
-                ?? "Codex could not finish the turn."
+        case "item/completed":
+            guard let item = params["item"] as? [String: Any],
+                  item["type"] as? String == "agentMessage",
+                  let text = item["text"] as? String, !text.isEmpty
+            else { break }
+            entries.append(Entry(kind: .assistant, text: text))
+        case "error":
+            guard params["willRetry"] as? Bool != true else { break }
+            let message = (params["error"] as? [String: Any])?["message"] as? String ?? "Codex could not finish the turn."
             let plain = Self.plain(message)
             // The account may not use this model: try the next one quietly.
-            if plain.contains("model"), plain.contains("not supported") || message.contains("model_not_found") {
-                if asksAgain { break }
-                if Self.replace(refusedIn: plain) {
-                    asksAgain = true
-                    break
-                }
+            if plain.contains("model"), plain.contains("not supported") || message.contains("model_not_found"),
+               !asksAgain, Self.replace(refusedIn: plain) {
+                asksAgain = true
+                break
             }
             if entries.last?.text != plain {
                 entries.append(Entry(kind: .error, text: plain))
             }
-            state = .idle
-        case "turn.completed":
+        case "turn/completed":
+            approvals.removeAll()
+            // A turn refused over its model is put again with another model.
+            if asksAgain {
+                asksAgain = false
+                askCodex(lastPrompt)
+                break
+            }
             state = .idle
         default:
             break
         }
+    }
+
+    /// Codex's answer to a request of ours.
+    private func codexAnswered(_ method: String?, _ message: [String: Any]) {
+        if let error = message["error"] as? [String: Any] {
+            entries.append(Entry(kind: .error, text: error["message"] as? String ?? "Codex refused a request."))
+            // Without a conversation there is nothing more to do.
+            if method == "initialize" || method == "thread/start" { stop() } else { state = .idle }
+            return
+        }
+        let result = message["result"] as? [String: Any] ?? [:]
+        switch method {
+        case "initialize":
+            write(["method": "initialized"])
+            // Reading is free; writing anything is asked for first.
+            var params: [String: Any] = [
+                "cwd": folder.path,
+                "sandbox": "read-only",
+                "approvalPolicy": "on-request",
+                "developerInstructions": Self.desktopBrief,
+            ]
+            if let model = Self.codexModel() { params["model"] = model }
+            call("thread/start", params)
+        case "thread/start":
+            thread = (result["thread"] as? [String: Any])?["id"] as? String
+            model = result["model"] as? String ?? ""
+            let waiting = early
+            early = []
+            waiting.forEach(askCodex)
+        default:
+            break
+        }
+    }
+
+    /// A request from Codex: to run a command, change files or widen its
+    /// sandbox. Each waits for the user; anything else is declined.
+    private func codexAsks(_ method: String, id: Any, params: [String: Any]) {
+        let reason = params["reason"] as? String
+        let summary: String
+        var input: [String: Any] = [:]
+        switch method {
+        case "item/commandExecution/requestApproval":
+            summary = "Shell: \(Self.unwrap(params["command"] as? String ?? reason ?? "a command"))"
+        case "item/fileChange/requestApproval":
+            summary = "Edit: \(params["grantRoot"] as? String ?? reason ?? "files")"
+        case "item/permissions/requestApproval":
+            summary = "Access: \(reason ?? "more of this Mac")"
+            input = params["permissions"] as? [String: Any] ?? [:]
+        default:
+            write(["id": id, "error": ["code": -32601, "message": "Oree does not handle \(method)."]])
+            return
+        }
+        approvals.append(Approval(id: "\(id)", summary: summary, input: input, request: id, method: method))
+        state = .waiting
+    }
+
+    /// "/bin/zsh -lc 'mkdir Notes'" is shown as "mkdir Notes".
+    private static func unwrap(_ command: String) -> String {
+        for shell in ["/bin/zsh -lc ", "/bin/bash -lc ", "bash -lc ", "zsh -lc "] where command.hasPrefix(shell) {
+            var inner = command.dropFirst(shell.count)
+            if inner.hasPrefix("'"), inner.hasSuffix("'"), inner.count >= 2 { inner = inner.dropFirst().dropLast() }
+            return String(inner)
+        }
+        return command
     }
 
     /// Codex wraps the service's error in JSON; the sentence inside is what
