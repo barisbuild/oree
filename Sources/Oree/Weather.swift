@@ -138,9 +138,10 @@ struct WeatherWidget: View {
                     // Now: the sky and the temperature on the left, what the
                     // sky is doing and the day's range on the right.
                     HStack(alignment: .center, spacing: 10) {
-                        IconView(feed.icon, size: 34)
+                        IconView(feed.icon, size: 30)
                         Text("\(feed.temperature)°")
-                            .font(.system(size: 42, weight: .light))
+                            .font(.system(size: 44, weight: .light))
+                            .monospacedDigit()
                         Spacer(minLength: 8)
                         VStack(alignment: .trailing, spacing: 3) {
                             Text(feed.summary)
@@ -153,25 +154,27 @@ struct WeatherWidget: View {
                             }
                         }
                     }
-                    Spacer(minLength: 0)
-                    Rectangle()
-                        .fill(Theme.hairline)
-                        .frame(height: 1)
-                        .padding(.bottom, 10)
+                    Spacer(minLength: 10)
+                    // The days ahead, on a panel of their own.
                     HStack(spacing: 0) {
                         ForEach(feed.days) { day in
-                            VStack(spacing: 5) {
+                            VStack(spacing: 6) {
                                 Text(day.name)
                                     .font(.caption)
                                     .foregroundStyle(Theme.secondary)
-                                IconView(day.icon, size: 18)
-                                Text("\(day.high)° \(day.low)°")
-                                    .font(.caption)
-                                    .monospacedDigit()
+                                IconView(day.icon, size: 17)
+                                HStack(spacing: 4) {
+                                    Text("\(day.high)°").fontWeight(.medium)
+                                    Text("\(day.low)°").foregroundStyle(Theme.secondary)
+                                }
+                                .font(.caption)
+                                .monospacedDigit()
                             }
                             .frame(maxWidth: .infinity)
                         }
                     }
+                    .padding(.vertical, 10)
+                    .background(Theme.panel.opacity(0.6), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
                 .frame(maxHeight: .infinity)
             }

@@ -1,4 +1,5 @@
 import AppKit
+import ImageIO
 import Observation
 import UniformTypeIdentifiers
 
@@ -53,6 +54,13 @@ final class Preferences {
     var wallpaperURL: URL? {
         wallpaperPath.map { URL(fileURLWithPath: $0) }
             ?? NSScreen.main.flatMap { NSWorkspace.shared.desktopImageURL(for: $0) }
+    }
+
+    /// Whether there is a picture to show: the chosen file, or the system's
+    /// wallpaper, still there and readable as an image.
+    var hasPicture: Bool {
+        guard let url = wallpaperURL, let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return false }
+        return CGImageSourceGetCount(source) > 0
     }
 
     func chooseWallpaper() {

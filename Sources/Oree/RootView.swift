@@ -74,12 +74,25 @@ struct HomeView: View {
             }
             .frame(height: geometry.size.height)
             .overlay(alignment: .topTrailing) {
-                HStack(spacing: 8) {
-                    CornerButton(title: "Wallpaper", icon: .image, action: preferences.chooseWallpaper)
-                    CornerButton(title: "Settings", icon: .settings, action: settings)
+                Button(action: settings) {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 19, weight: .medium))
+                        .frame(width: 40, height: 40)
+                        .glass(in: Circle())
+                        .contentShape(Circle())
                 }
+                .buttonStyle(.plain)
+                .help("Settings")
                 .padding(.top, insets.top + 12)
                 .padding(.trailing, insets.trailing + 16)
+            }
+            // With no picture to show, a way to choose one; otherwise the
+            // picture is changed in Settings.
+            .overlay(alignment: .top) {
+                if !preferences.hasPicture && session == nil {
+                    CornerButton(title: "Set wallpaper", icon: .image, action: preferences.chooseWallpaper)
+                        .padding(.top, insets.top + 12)
+                }
             }
         }
         // The sweep works anywhere on the desktop, picture included, the way
@@ -125,6 +138,9 @@ struct Composer: View {
     @FocusState private var composing: Bool
 
     @State private var confirmsBypass = false
+    /// The box's height with the field empty: the room it keeps in the
+    /// layout however much is typed.
+    @State private var resting: CGFloat?
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 10) {
@@ -132,7 +148,8 @@ struct Composer: View {
                 TextField("Task", text: $draft, prompt: Text(""), axis: .vertical)
                     .textFieldStyle(.plain)
                     .font(.body)
-                    .lineLimit(2...6)
+                    // Past four lines the text scrolls inside the field.
+                    .lineLimit(2...4)
                     .focused($composing)
                     .onSubmit(send)
                     // The system dims its own prompt too far to read on glass.
@@ -167,6 +184,14 @@ struct Composer: View {
             }
             .padding(14)
             .glass(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            // Its own height whatever room it is offered.
+            .fixedSize(horizontal: false, vertical: true)
+            .onGeometryChange(for: CGFloat.self, of: \.size.height) { height in
+                if draft.isEmpty { resting = height }
+            }
+            // Taller than at rest, the box grows upward over the picture
+            // and leaves the widgets where they are.
+            .frame(height: resting, alignment: .bottom)
 
             AgentsButton(store: store, open: open)
         }
@@ -198,6 +223,7 @@ struct Composer: View {
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
+        .tint(store.preferences.bypassPermissions ? .orange : nil)
         .foregroundStyle(store.preferences.bypassPermissions ? Color.orange : Theme.secondary)
         .help("Whether agents ask before they change anything")
     }

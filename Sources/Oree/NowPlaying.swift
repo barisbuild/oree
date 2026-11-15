@@ -141,45 +141,87 @@ final class NowPlaying {
 struct NowPlayingWidget: View {
     let playing: NowPlaying
 
-    private static let coverSize: CGFloat = 104
+    private static let coverSize: CGFloat = 64
 
     var body: some View {
         Widget(title: "Now playing", icon: .music, count: nil, height: widgetHeight) {
             if playing.hasTrack {
-                // The cover and the column beside it are one height: the
-                // words hang from its top edge, the buttons sit on its foot.
-                HStack(alignment: .top, spacing: 14) {
-                    cover
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(playing.title)
-                            .font(.callout.weight(.semibold))
-                            .lineLimit(2)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Text([playing.artist, playing.source].filter { !$0.isEmpty }.joined(separator: " · "))
-                            .font(.caption)
-                            .foregroundStyle(Theme.secondary)
-                            .lineLimit(1)
-                        Spacer(minLength: 0)
-                        HStack(spacing: 6) {
-                            control(.arrowLeft, help: "Previous", action: playing.previous)
-                            control(playing.isPlaying ? .pause : .play, help: playing.isPlaying ? "Pause" : "Play", prominent: true, action: playing.toggle)
-                            control(.arrowRight, help: "Next", action: playing.next)
+                VStack(spacing: 0) {
+                    // What is playing: the cover, and beside it the title,
+                    // who it is by and where it plays.
+                    HStack(alignment: .center, spacing: 12) {
+                        cover
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(playing.title)
+                                .font(.callout.weight(.semibold))
+                                .lineLimit(2)
+                            if !playing.artist.isEmpty {
+                                Text(playing.artist)
+                                    .font(.caption)
+                                    .foregroundStyle(Theme.secondary)
+                                    .lineLimit(1)
+                            }
+                            source
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .frame(height: Self.coverSize)
+                    Spacer(minLength: 10)
+                    // The controls, spread across the foot of the card.
+                    HStack(spacing: 0) {
+                        Spacer()
+                        control("backward.fill", help: "Previous", action: playing.previous)
+                        Spacer()
+                        playButton
+                        Spacer()
+                        control("forward.fill", help: "Next", action: playing.next)
+                        Spacer()
+                    }
                 }
-                .frame(maxHeight: .infinity)
+                .frame(maxHeight: .infinity, alignment: .top)
             } else {
-                Hint("Play a song or a video in any app and it shows here.")
+                VStack(spacing: 8) {
+                    Image(systemName: "music.note")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(Theme.secondary)
+                        .frame(width: 42, height: 42)
+                        .background(Theme.panel, in: Circle())
+                    Text("Nothing playing")
+                        .font(.callout.weight(.medium))
+                    Text("Play a song or a video in any app and it shows here.")
+                        .font(.caption)
+                        .foregroundStyle(Theme.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+    }
+
+    /// The app it plays in, and while it plays, a few bars moving.
+    private var source: some View {
+        HStack(spacing: 5) {
+            if let icon = playing.sourceIcon {
+                Image(nsImage: icon)
+                    .resizable()
+                    .frame(width: 13, height: 13)
+            }
+            if !playing.source.isEmpty {
+                Text(playing.source)
+                    .font(.caption)
+                    .foregroundStyle(Theme.secondary)
+                    .lineLimit(1)
+            }
+            if playing.isPlaying {
+                Bars()
+            }
+        }
+        .padding(.top, 2)
     }
 
     /// The cover; without one, the icon of the app that is playing.
     private var cover: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(Theme.panel)
             if let artwork = playing.artwork {
                 Image(nsImage: artwork)
@@ -188,24 +230,60 @@ struct NowPlayingWidget: View {
             } else if let icon = playing.sourceIcon {
                 Image(nsImage: icon)
                     .resizable()
-                    .frame(width: 64, height: 64)
+                    .frame(width: 42, height: 42)
             } else {
-                IconView(.music, size: 28)
+                IconView(.music, size: 24)
                     .foregroundStyle(Theme.secondary)
             }
         }
         .frame(width: Self.coverSize, height: Self.coverSize)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
-    private func control(_ icon: Icon, help: String, prominent: Bool = false, action: @escaping () -> Void) -> some View {
+    private var playButton: some View {
+        Button(action: playing.toggle) {
+            Image(systemName: playing.isPlaying ? "pause.fill" : "play.fill")
+                .font(.system(size: 16))
+                .foregroundStyle(Theme.card)
+                .frame(width: 40, height: 40)
+                .background(Theme.ink, in: Circle())
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .help(playing.isPlaying ? "Pause" : "Play")
+    }
+
+    private func control(_ symbol: String, help: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            IconView(icon, size: 16)
-                .frame(width: 34, height: 34)
-                .background(prominent ? Theme.panel : .clear, in: Circle())
+            Image(systemName: symbol)
+                .font(.system(size: 15))
+                .foregroundStyle(Theme.primary)
+                .frame(width: 36, height: 36)
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .help(help)
+    }
+}
+
+/// Three bars rising and falling, a few times a second: cheap enough to
+/// leave running while something plays.
+private struct Bars: View {
+    @Environment(\.accessibilityReduceMotion) private var still
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 0.2)) { context in
+            let tick = Int(context.date.timeIntervalSinceReferenceDate * 5)
+            HStack(alignment: .bottom, spacing: 1.5) {
+                ForEach(0..<3, id: \.self) { bar in
+                    let height = still ? 6 : [4.0, 9, 6, 10, 5, 8, 3, 7][(tick + bar * 3) % 8]
+                    Capsule()
+                        .fill(Theme.accent)
+                        .frame(width: 2, height: height)
+                        .animation(.easeInOut(duration: 0.2), value: height)
+                }
+            }
+            .frame(height: 10, alignment: .bottom)
+        }
     }
 }
