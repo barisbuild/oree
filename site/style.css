@@ -96,7 +96,8 @@ h2 span { color: var(--blue); }
   position: sticky;
   top: 64px;
   height: calc(100vh - 64px);
-  overflow: clip;
+  /* The desktop reaches up under the header. */
+  overflow: visible;
 }
 
 /* ---- The words: centred, arriving in turn */
@@ -172,20 +173,18 @@ h2 span { color: var(--blue); }
   --frame: 0;
   position: absolute;
   left: 50%;
-  top: 50%;
-  --w: min(1000px, 100vw - 160px, (100vh - 64px - 120px) * 1.6);
-  width: var(--w);
-  height: calc(var(--w) / 1.6);
+  /* The whole window, from under the header to the fold. */
+  top: calc(50% - 32px);
+  width: 100%;
+  height: 100vh;
   container-type: inline-size;
-  border-radius: 14px;
   background: rgb(243 243 246 / var(--frame));
-  box-shadow: 0 0 0 1px rgb(16 16 30 / calc(var(--frame) * 0.1)), 0 50px 100px -30px rgb(20 20 60 / calc(var(--frame) * 0.35));
   transform: translate(-50%, -50%);
   color: var(--app-text);
 }
-.sw-desk > * { font-size: 1cqw; }
+.sw-desk > * { font-size: 0.82cqw; }
 
-.sw-photo { position: absolute; inset: 0 0 auto; height: 47%; border-radius: 14px 14px 0 0; opacity: var(--photo, 0); }
+.sw-photo { position: absolute; inset: 0 0 auto; height: 47%; opacity: var(--photo, 0); }
 .sw-menubar { position: absolute; inset: 0 0 auto; display: flex; align-items: center; gap: 1.4em; height: 2.5em; padding: 0 1.1em; font-size: 0.95cqw; color: #fff; text-shadow: 0 1px 3px rgb(0 0 30 / 0.35); opacity: var(--photo, 0); }
 .sw-menubar span { width: 0.95em; height: 0.95em; border: 0.24em solid currentColor; border-radius: 50%; }
 .sw-menubar b { font-weight: 600; }
@@ -193,7 +192,7 @@ h2 span { color: var(--blue); }
 .sw-menubar em { margin-left: auto; font-style: normal; }
 
 .sw-box {
-  position: absolute; top: 30%; left: 30%; width: 40%; z-index: 2;
+  position: absolute; top: 45%; left: 35%; width: 30%; z-index: 2;
   padding: 1em 1.1em; border: 1px solid var(--app-line); border-radius: 1.2em;
   background: rgb(255 255 255 / 0.82); backdrop-filter: blur(18px) saturate(1.4);
   box-shadow: 0 1em 3em rgb(20 20 60 / 0.12);
@@ -204,23 +203,12 @@ h2 span { color: var(--blue); }
 .sw-row span { display: inline-flex; align-items: center; gap: 0.5em; }
 .sw-row b { display: grid; place-items: center; width: 2.1em; height: 2.1em; border-radius: 0.6em; background: rgb(16 16 30 / 0.07); }
 
-.sw-cards { position: absolute; inset: 44.5% 9% auto; z-index: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8em; }
+.sw-cards { position: absolute; inset: 60% 17% auto; z-index: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8em; }
 .sw-cards .w { font-size: 0.86em; opacity: 0; will-change: transform, opacity; }
 
-/* ---- Once the last word has been said, the desktop fills the screen:
-   the full height of the window, from under the header to the fold. */
-.sw-scene.full { overflow: visible; }
-.sw-scene.full .sw-desk {
-  width: 100%; height: 100vh; top: calc(50% - 32px); border-radius: 0; box-shadow: none;
-  transition: width 1s var(--out), height 1s var(--out), top 1s var(--out), border-radius 1s;
-}
-.sw-scene.full .sw-photo { border-radius: 0; transition: border-radius 1s; }
+/* ---- Once the story is told: the last word, then the words that stay. */
 .sw-scene.said .sw-cards, .sw-scene.said .sw-box { opacity: 0.12 !important; filter: blur(3px); }
-/* Full screen, the widgets and the box draw in smaller and lower, leaving
-   the sky for the words. */
-.sw-cards, .sw-box { transition: inset 1s var(--out), top 1s var(--out), left 1s var(--out), width 1s var(--out), font-size 1s var(--out), opacity 0.5s, filter 0.5s; }
-.sw-scene.full .sw-cards { inset: 60% 17% auto; font-size: 0.82cqw; }
-.sw-scene.full .sw-box { top: 45%; left: 35%; width: 30%; font-size: 0.82cqw; }
+.sw-cards, .sw-box { transition: opacity 0.5s, filter 0.5s; }
 
 .sw-end {
   position: absolute; left: 0; right: 0; top: 8%; z-index: 5;
@@ -512,9 +500,9 @@ footer a:hover { color: var(--ink); }
   .sw { height: auto; }
   .sw-lead { order: -1; }
   .sw-items, .sw-rect, .sw-cursor, .sw-close { display: none; }
-  .sw-desk { --frame: 1; --photo: 1; position: relative; left: auto; top: auto; width: calc(100% - 24px); height: auto; padding: 170px 10px 10px; margin: 0 auto; transform: none; }
+  .sw-desk { --frame: 1; --photo: 1; position: relative; left: auto; top: auto; width: calc(100% - 24px); height: auto; border-radius: 14px; padding: 170px 10px 10px; margin: 0 auto; transform: none; }
   .sw-desk > * { font-size: 10.5px; }
-  .sw-photo { height: 240px; }
+  .sw-photo { height: 240px; border-radius: 14px 14px 0 0; }
   .sw-menubar { font-size: 10px; }
   .sw-box { position: relative; top: auto; left: auto; width: auto; margin-bottom: 10px; opacity: 1; }
   .sw-cards { position: static; grid-template-columns: repeat(2, 1fr); }
