@@ -135,26 +135,23 @@ struct WeatherWidget: View {
                 Hint("The weather could not be read. It is tried again every minute.")
             case .ready:
                 VStack(alignment: .leading, spacing: 0) {
-                    // Now: the temperature and what the sky is doing on the
-                    // left, the sky itself on the right.
-                    HStack(alignment: .center) {
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text("\(feed.temperature)°")
-                                .font(.system(size: 42, weight: .light))
-                            HStack(spacing: 6) {
-                                Text(feed.summary)
-                                if let today = feed.days.first {
-                                    Text("H \(today.high)°  L \(today.low)°")
-                                        .foregroundStyle(Theme.secondary)
-                                        .monospacedDigit()
-                                }
+                    // Now: the sky and the temperature on the left, what the
+                    // sky is doing and the day's range on the right.
+                    HStack(alignment: .center, spacing: 10) {
+                        IconView(feed.icon, size: 34)
+                        Text("\(feed.temperature)°")
+                            .font(.system(size: 42, weight: .light))
+                        Spacer(minLength: 8)
+                        VStack(alignment: .trailing, spacing: 3) {
+                            Text(feed.summary)
+                                .font(.callout.weight(.medium))
+                            if let today = feed.days.first {
+                                Text("H \(today.high)°  L \(today.low)°")
+                                    .font(.caption)
+                                    .foregroundStyle(Theme.secondary)
+                                    .monospacedDigit()
                             }
-                            .font(.caption)
                         }
-                        Spacer()
-                        IconView(feed.icon, size: 30)
-                            .frame(width: 58, height: 58)
-                            .background(Theme.panel, in: Circle())
                     }
                     Spacer(minLength: 0)
                     Rectangle()

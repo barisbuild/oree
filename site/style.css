@@ -248,13 +248,15 @@ h2 span { color: var(--faint); }
 .controls svg { width: 1.15em; height: 1.15em; }
 
 .weather { display: flex; flex-direction: column; flex: 1; }
-.now { display: flex; align-items: center; justify-content: space-between; gap: 0.8em; padding-top: 0.2em; }
-.now span { display: grid; gap: 0.35em; }
+/* As in the app: the sky and the temperature on the left, what the sky is
+   doing and the day's range on the right. */
+.now { display: flex; align-items: center; gap: 0.6em; padding-top: 0.2em; }
+.now b { display: grid; place-items: center; flex: none; }
+.now b svg { width: 2.2em; height: 2.2em; }
 .now strong { font-size: 2.7em; font-weight: 300; line-height: 1; letter-spacing: -0.03em; }
-.now small { font-size: 0.82em; }
-.now small i { font-style: normal; color: var(--app-soft); }
-.now b { flex: none; display: grid; place-items: center; width: 3.4em; height: 3.4em; border-radius: 50%; background: rgb(16 16 30 / 0.06); }
-.now b svg { width: 1.75em; height: 1.75em; }
+.now span { display: grid; justify-items: end; gap: 0.25em; margin-left: auto; text-align: right; }
+.now small { font-size: 0.92em; font-weight: 500; }
+.now span i { font-style: normal; font-size: 0.8em; color: var(--app-soft); font-variant-numeric: tabular-nums; }
 .weather ol { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: auto; padding-top: 0.9em; border-top: 1px solid var(--app-line); text-align: center; font-size: 0.82em; color: var(--app-soft); }
 .weather ol li { display: grid; justify-items: center; gap: 0.45em; }
 .weather ol svg { width: 1.45em; height: 1.45em; color: var(--app-text); }
