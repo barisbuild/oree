@@ -103,6 +103,8 @@ h2 span { color: var(--blue); }
 /* ---- The clutter: files left lying on the desktop */
 
 .sw-items { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+/* The opening line, written across the middle of the clutter, above it. */
+.sw-desk > .sw-mess { position: absolute; inset: 60% 12% 4%; z-index: 3; display: grid; place-content: center; margin: 0; text-align: center; font-size: clamp(30px, 3cqw, 56px); font-weight: 700; line-height: 1.05; letter-spacing: -0.04em; color: var(--ink); text-shadow: 0 0 1.2em var(--app), 0 0 0.4em var(--app); pointer-events: none; }
 .sw-item { position: absolute; left: 0; top: 0; will-change: transform, opacity; }
 /* Arrival on load, then a slow drift of its own: the page breathes before
    anyone scrolls. */
@@ -285,11 +287,11 @@ h2 span { color: var(--blue); }
 .ruler { position: relative; grid-column: 1 / -1; align-self: end; height: 2.6em; margin: 0 -1.1em -0.4em; overflow: hidden; touch-action: none; -webkit-mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent); mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent); }
 .ruler.free { cursor: ew-resize; }
 .scale { position: absolute; left: 50%; top: 0; transition: transform 0.25s linear; }
-.scale i { position: absolute; left: calc(var(--m) * 0.75em); top: 0.55em; width: 1px; height: 0.5em; background: var(--app-soft); }
+.scale i { position: absolute; left: calc(var(--m) * 0.75em); top: 0.3em; width: 1px; height: 0.5em; background: var(--app-soft); }
 .scale i.major { height: 0.95em; }
 .scale i.past { opacity: 0.35; }
-.scale b { position: absolute; top: 1.15em; left: 0; transform: translateX(-50%); font-size: 0.7em; font-weight: 500; color: var(--app-soft); font-variant-numeric: tabular-nums; }
-.needle { position: absolute; left: 50%; top: 0.25em; width: 0.17em; height: 1.55em; margin-left: -0.085em; border-radius: 1em; background: var(--app-blue); }
+.scale b { position: absolute; top: 1.45em; left: 0; transform: translateX(-50%); font-size: 0.7em; font-weight: 500; color: var(--app-soft); font-variant-numeric: tabular-nums; }
+.needle { position: absolute; left: 50%; top: 0; width: 0.17em; height: 1.55em; margin-left: -0.085em; border-radius: 1em; background: var(--app-blue); }
 
 @keyframes blink { 50% { opacity: 0; } }
 
@@ -520,7 +522,7 @@ footer a:hover { color: var(--ink); }
   .sw-end-line { color: var(--soft); }
   .sw-end .badge { color: var(--ink); border-color: var(--line); background: var(--panel); }
   .sw { height: auto; }
-  .sw-items { display: none; }
+  .sw-items, .sw-mess { display: none; }
   .sw-desk { --frame: 1; --photo: 1; position: relative; left: auto; top: auto; width: calc(100% - 24px); height: auto; border-radius: 14px; padding: 170px 10px 10px; margin: 0 auto; transform: none; }
   .sw-desk > * { font-size: 10.5px; }
   .sw-photo { height: 240px; border-radius: 14px 14px 0 0; }
@@ -556,7 +558,7 @@ footer a:hover { color: var(--ink); }
   .sw-end-line { color: var(--soft); }
   .sw-end .badge { color: var(--ink); border-color: var(--line); background: var(--panel); }
   .sw { height: auto; }
-  .sw-items { display: none; }
+  .sw-items, .sw-mess { display: none; }
   .sw-desk { --frame: 1; --photo: 1; position: relative; left: auto; top: auto; margin: 0 auto; transform: none; }
   .sw-box, .sw-cards .w { opacity: 1; }
   .sw-item > .icon { transition: none; }

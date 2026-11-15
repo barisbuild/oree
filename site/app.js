@@ -76,7 +76,7 @@ const widgets = [
     key: "weather", icon: "sunCloud", name: "Weather", line: "Now, and the next four days, where you are.",
     html: `<h3>${icon("sunCloud")}Weather</h3>
       <div class="weather"><div class="now"><div><small>Lisbon</small><strong>18°</strong></div>
-      <span>${icon("sunCloud")}<small>Partly cloudy</small><i>H 20° L 14°</i></span></div>
+      <span>${icon("sunCloud")}<small>Partly cloudy</small></span></div>
       <ol><li>Today${icon("sunCloud")}<i><b>20°</b> 14°</i></li><li>Sun${icon("sun")}<i><b>23°</b> 15°</i></li>
       <li>Mon${icon("rain")}<i><b>19°</b> 13°</i></li><li>Tue${icon("cloud")}<i><b>18°</b> 12°</i></li></ol></div>`,
   },
@@ -154,6 +154,7 @@ const desk = $("[data-desk]");
 const box = $("[data-box]");
 const deck = $("[data-cards]");
 const heroPicture = $("[data-hero-picture]");
+const mess = $("[data-mess]");
 
 /** Ease out with a little overshoot, for things settling into place. */
 const settleInto = (t) => 1 + 2.2 * Math.pow(t - 1, 3) + 1.2 * Math.pow(t - 1, 2);
@@ -265,6 +266,9 @@ function tell() {
     element.style.opacity = clamp(opened[index] * 2.4).toFixed(3);
   });
 
+  // The opening line gives way as the files begin to gather.
+  mess.style.opacity = (1 - ease(span(p, 0.37, 0.45))).toFixed(3);
+
   // The picture is there from the start; only the widgets are made.
   deck.style.opacity = "";
   deck.style.filter = "";
@@ -286,7 +290,7 @@ addEventListener("scroll", turnWheel, { passive: true });
 
 // The story plays once, as soon as the page is ready: the clutter is
 // seen for a moment where the widgets will be, then gathers into them.
-const PLAY_DELAY = 700;
+const PLAY_DELAY = 500;
 const PLAY_LENGTH = 3000;
 const END = 0.72;
 let heroP = 0.36;
