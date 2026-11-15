@@ -519,16 +519,60 @@ private struct FileCell: View {
                             .background(Theme.accent, in: Capsule())
                     }
                 }
-            Text(name)
-                .font(.caption)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .padding(.horizontal, 5)
-                .padding(.vertical, 2)
-                .background(isPicked && badge == nil ? Theme.accent : .clear, in: RoundedRectangle(cornerRadius: 5))
+            // As in Finder: up to two lines, each picked out on its own,
+            // the second shortened in the middle when it is too long.
+            VStack(spacing: 0) {
+                ForEach(Array(Self.lines(of: name).enumerated()), id: \.offset) { _, line in
+                    Text(line)
+                        .font(.caption)
+                        .lineLimit(1)
+                        .fixedSize()
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 1)
+                        .foregroundStyle(isPicked && badge == nil ? Color.white : Theme.primary)
+                        .background(
+                            isPicked && badge == nil ? Color(nsColor: .selectedContentBackgroundColor) : .clear,
+                            in: RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        )
+                }
+            }
         }
         .frame(width: 96)
         .contentShape(Rectangle())
+    }
+
+    /// How wide a line of the name may run.
+    private static let lineWidth: CGFloat = 86
+    private static let font = NSFont.systemFont(ofSize: NSFont.preferredFont(forTextStyle: .caption1).pointSize)
+
+    private static func width(_ text: String) -> CGFloat {
+        (text as NSString).size(withAttributes: [.font: font]).width
+    }
+
+    /// The name in one line if it fits, otherwise two: the first broken
+    /// where a word ends, the second shortened in the middle to fit.
+    static func lines(of name: String) -> [String] {
+        guard width(name) > lineWidth else { return [name] }
+        let characters = Array(name)
+        var cut = 1
+        while cut < characters.count, width(String(characters[..<(cut + 1)])) <= lineWidth { cut += 1 }
+        // Back to the last break within the first line, when there is one.
+        if let space = characters[..<cut].lastIndex(where: { " -_.".contains($0) }), space > 0 {
+            cut = space + 1
+        }
+        let first = String(characters[..<cut]).trimmingCharacters(in: .whitespaces)
+        let rest = Array(String(characters[cut...]).trimmingCharacters(in: .whitespaces))
+        var second = String(rest)
+        if width(second) > lineWidth {
+            var keep = rest.count
+            repeat {
+                keep -= 1
+                let head = rest.prefix((keep + 1) / 2)
+                let tail = rest.suffix(keep / 2)
+                second = String(head) + "…" + String(tail)
+            } while keep > 2 && width(second) > lineWidth
+        }
+        return [first, second]
     }
 }
 

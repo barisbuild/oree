@@ -141,41 +141,36 @@ final class NowPlaying {
 struct NowPlayingWidget: View {
     let playing: NowPlaying
 
-    private static let coverSize: CGFloat = 64
+    private static let coverSize: CGFloat = 132
 
     var body: some View {
         Widget(title: "Now playing", icon: .music, count: nil, height: widgetHeight) {
             if playing.hasTrack {
-                VStack(spacing: 0) {
-                    // What is playing: the cover, and beside it the title,
-                    // who it is by and where it plays.
-                    HStack(alignment: .center, spacing: 12) {
-                        cover
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(playing.title)
-                                .font(.callout.weight(.semibold))
-                                .lineLimit(2)
-                            if !playing.artist.isEmpty {
-                                Text(playing.artist)
-                                    .font(.caption)
-                                    .foregroundStyle(Theme.secondary)
-                                    .lineLimit(1)
-                            }
-                            source
+                // A large cover, and beside it, hanging from its top edge,
+                // the title, who it is by and where it plays; the controls
+                // sit on its foot.
+                HStack(alignment: .top, spacing: 14) {
+                    cover
+                    VStack(alignment: .leading, spacing: 3) {
+                        source
+                        Text(playing.title)
+                            .font(.callout.weight(.semibold))
+                            .lineLimit(2)
+                        if !playing.artist.isEmpty {
+                            Text(playing.artist)
+                                .font(.callout)
+                                .foregroundStyle(Theme.secondary)
+                                .lineLimit(1)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        Spacer(minLength: 6)
+                        HStack(spacing: 2) {
+                            control("backward.fill", help: "Previous", action: playing.previous)
+                            playButton
+                            control("forward.fill", help: "Next", action: playing.next)
+                        }
+                        .padding(.leading, -8)
                     }
-                    Spacer(minLength: 10)
-                    // The controls, spread across the foot of the card.
-                    HStack(spacing: 0) {
-                        Spacer()
-                        control("backward.fill", help: "Previous", action: playing.previous)
-                        Spacer()
-                        playButton
-                        Spacer()
-                        control("forward.fill", help: "Next", action: playing.next)
-                        Spacer()
-                    }
+                    .frame(maxWidth: .infinity, maxHeight: Self.coverSize, alignment: .leading)
                 }
                 .frame(maxHeight: .infinity, alignment: .top)
             } else {
@@ -215,13 +210,12 @@ struct NowPlayingWidget: View {
                 Bars()
             }
         }
-        .padding(.top, 2)
     }
 
     /// The cover; without one, the icon of the app that is playing.
     private var cover: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Theme.panel)
             if let artwork = playing.artwork {
                 Image(nsImage: artwork)
@@ -230,14 +224,15 @@ struct NowPlayingWidget: View {
             } else if let icon = playing.sourceIcon {
                 Image(nsImage: icon)
                     .resizable()
-                    .frame(width: 42, height: 42)
+                    .frame(width: 64, height: 64)
             } else {
-                IconView(.music, size: 24)
+                IconView(.music, size: 32)
                     .foregroundStyle(Theme.secondary)
             }
         }
         .frame(width: Self.coverSize, height: Self.coverSize)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .shadow(color: .black.opacity(0.12), radius: 8, y: 4)
     }
 
     private var playButton: some View {

@@ -125,7 +125,7 @@ struct WeatherWidget: View {
     let feed: WeatherFeed
 
     var body: some View {
-        Widget(title: feed.place.isEmpty ? "Weather" : feed.place, icon: .sunCloud, count: nil, height: widgetHeight) {
+        Widget(title: "Weather", icon: .sunCloud, count: nil, height: widgetHeight) {
             switch feed.state {
             case .locating:
                 Hint("Finding where you are…")
@@ -135,13 +135,20 @@ struct WeatherWidget: View {
                 Hint("The weather could not be read. It is tried again every minute.")
             case .ready:
                 VStack(alignment: .leading, spacing: 0) {
-                    // Now: the sky and the temperature on the left, what the
-                    // sky is doing and the day's range on the right.
-                    HStack(alignment: .center, spacing: 10) {
-                        IconView(feed.icon, size: 30)
-                        Text("\(feed.temperature)°")
-                            .font(.system(size: 44, weight: .light))
-                            .monospacedDigit()
+                    // Where, and how warm, on the left; what the sky is
+                    // doing and the day's range on the right, level with it.
+                    HStack(alignment: .bottom, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(feed.place.isEmpty ? "Here" : feed.place)
+                                .font(.callout.weight(.semibold))
+                                .lineLimit(1)
+                            HStack(spacing: 8) {
+                                IconView(feed.icon, size: 28)
+                                Text("\(feed.temperature)°")
+                                    .font(.system(size: 40, weight: .light))
+                                    .monospacedDigit()
+                            }
+                        }
                         Spacer(minLength: 8)
                         VStack(alignment: .trailing, spacing: 3) {
                             Text(feed.summary)
@@ -153,12 +160,13 @@ struct WeatherWidget: View {
                                     .monospacedDigit()
                             }
                         }
+                        .padding(.bottom, 8)
                     }
                     Spacer(minLength: 10)
                     // The days ahead, on a panel of their own.
                     HStack(spacing: 0) {
                         ForEach(feed.days) { day in
-                            VStack(spacing: 6) {
+                            VStack(spacing: 5) {
                                 Text(day.name)
                                     .font(.caption)
                                     .foregroundStyle(Theme.secondary)
@@ -173,7 +181,7 @@ struct WeatherWidget: View {
                             .frame(maxWidth: .infinity)
                         }
                     }
-                    .padding(.vertical, 10)
+                    .padding(.vertical, 8)
                     .background(Theme.panel.opacity(0.6), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
                 .frame(maxHeight: .infinity)

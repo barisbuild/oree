@@ -223,8 +223,8 @@ struct Composer: View {
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
-        .tint(store.preferences.bypassPermissions ? .orange : nil)
-        .foregroundStyle(store.preferences.bypassPermissions ? Color.orange : Theme.secondary)
+        .tint(store.preferences.bypassPermissions ? Theme.accent.opacity(0.6) : nil)
+        .foregroundStyle(store.preferences.bypassPermissions ? Theme.accent.opacity(0.6) : Theme.secondary)
         .help("Whether agents ask before they change anything")
     }
 
