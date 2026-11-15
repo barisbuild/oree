@@ -62,6 +62,19 @@ final class RemindersFeed {
         }
     }
 
+    /// A new reminder in the default list, with nothing but its title.
+    func add(_ title: String) {
+        if Demo.on {
+            items.insert(Item(id: UUID().uuidString, title: title, due: nil, reminder: EKReminder(eventStore: events)), at: 0)
+            return
+        }
+        let reminder = EKReminder(eventStore: events)
+        reminder.title = title
+        reminder.calendar = events.defaultCalendarForNewReminders()
+        try? events.save(reminder, commit: true)
+        refresh()
+    }
+
     func complete(_ item: Item) {
         item.reminder.isCompleted = true
         try? events.save(item.reminder, commit: true)
@@ -71,19 +84,29 @@ final class RemindersFeed {
 
 struct RemindersWidget: View {
     let feed: RemindersFeed
+    /// A new one is being written at the top of the list.
+    @State private var adding = false
+    @State private var draft = ""
+    @FocusState private var writing: Bool
 
     var body: some View {
-        Widget(title: "Reminders", icon: .checklist, count: feed.items.count, height: widgetHeight) {
+        Widget(
+            title: "Reminders", icon: .checklist, count: feed.items.count, height: widgetHeight,
+            accessory: feed.access == .granted ? AnyView(addButton) : nil
+        ) {
             switch feed.access {
             case .unasked:
                 Hint("Reading your reminders…")
             case .denied:
                 Hint("Allow Oree to see Reminders in System Settings, under Privacy & Security.")
-            case .granted where feed.items.isEmpty:
-                Hint("Nothing left to do.")
             case .granted:
                 VStack(spacing: 2) {
-                    ForEach(feed.items) { item in
+                    if adding {
+                        newReminder
+                    } else if feed.items.isEmpty {
+                        Hint("Nothing left to do.")
+                    }
+                    ForEach(feed.items.prefix(adding ? 4 : 5)) { item in
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
                             Button {
                                 feed.complete(item)
@@ -109,6 +132,49 @@ struct RemindersWidget: View {
                 }
             }
         }
+        .onChange(of: writing) { _, focused in
+            // Leaving the field closes it, unless something is half written.
+            if !focused, draft.trimmingCharacters(in: .whitespaces).isEmpty { adding = false }
+        }
+    }
+
+    private var addButton: some View {
+        Button {
+            adding = true
+            writing = true
+        } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Theme.secondary)
+                .frame(width: 20, height: 20)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help("New reminder")
+    }
+
+    /// A line to write a reminder on, as plain as a to-do list: Return adds
+    /// it and leaves the line ready for the next, Escape puts it away.
+    private var newReminder: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Circle()
+                .strokeBorder(Theme.secondary, style: StrokeStyle(lineWidth: 1.5, dash: [2, 2]))
+                .frame(width: 13, height: 13)
+            TextField("New reminder", text: $draft)
+                .textFieldStyle(.plain)
+                .focused($writing)
+                .onSubmit {
+                    let title = draft.trimmingCharacters(in: .whitespaces)
+                    if !title.isEmpty { feed.add(title) }
+                    draft = ""
+                    writing = true
+                }
+                .onExitCommand {
+                    draft = ""
+                    adding = false
+                }
+        }
+        .padding(.vertical, 5)
     }
 }
 
