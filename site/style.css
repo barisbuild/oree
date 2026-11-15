@@ -54,20 +54,19 @@ canvas.picture { display: block; width: 100%; image-rendering: pixelated; }
 }
 .brand { display: inline-flex; align-items: center; gap: 11px; font-weight: 600; font-size: 24px; letter-spacing: -0.035em; }
 .mark { width: 36px; height: 36px; background: url("mark.png") center / contain no-repeat; }
-.nav nav { display: flex; gap: 30px; font-size: 16px; color: var(--soft); }
-.nav nav a { transition: color 0.2s; }
-.nav nav a:hover { color: var(--ink); }
-/* Across from the name: the app's icon, the call, an arrow. */
+/* Across from the name: the app's icon set flush in the corner of a small
+   framed box, the call, and an arrow. */
 .get {
-  display: flex; align-items: center; gap: 22px; height: 56px; margin-left: auto; padding: 0 22px 0 6px;
-  border: 1px solid var(--line); border-radius: 14px; background: #fff;
-  font-size: 15px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  display: flex; align-items: center; gap: 14px; height: 48px; margin-left: auto; padding: 3px 16px 3px 3px;
+  border: 1px solid var(--line); border-radius: 13px; background: #fff;
+  font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink);
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s var(--out);
 }
-.get img { width: 44px; height: 44px; border-radius: 10px; }
-.get svg { width: 20px; height: 20px; transition: transform 0.25s var(--out); }
-.get:hover { border-color: #d5d5dc; box-shadow: 0 4px 14px -6px rgb(16 16 30 / 0.2); }
+.get img { align-self: stretch; width: auto; height: auto; aspect-ratio: 1; border-radius: 9px; object-fit: cover; }
+.get svg { width: 17px; height: 17px; transition: transform 0.25s var(--out); }
+.get:hover { border-color: #d0d0d8; box-shadow: 0 6px 16px -8px rgb(16 16 30 / 0.25); }
 .get:hover svg { transform: translateX(3px); }
+.get:active { transform: scale(0.98); }
 
 .button {
   display: inline-flex;
@@ -522,12 +521,10 @@ footer a:hover { color: var(--ink); }
 @media (max-width: 860px) {
   .sw { height: auto; }
   .sw-scene { position: static; height: auto; display: grid; gap: 28px; padding: 116px 0 12px; overflow: visible; }
-  .nav nav { display: none; }
   .bar { gap: 12px; height: 62px; padding-left: 16px; }
   .brand { font-size: 21px; }
   .mark { width: 30px; height: 30px; }
-  .get { gap: 12px; height: 48px; padding-right: 14px; font-size: 13px; }
-  .get img { width: 36px; height: 36px; }
+  .get { gap: 10px; height: 44px; padding-right: 12px; font-size: 12px; }
   .sw-end { position: static; order: -1; padding: 0 20px; color: var(--ink); opacity: 1; transform: none; visibility: visible; }
   .sw-end-title, .sw-end-line { text-shadow: none; }
   .sw-end-line { color: var(--soft); }
