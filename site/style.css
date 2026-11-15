@@ -130,7 +130,8 @@ h2 span { color: var(--blue); }
 /* ---- The desktop the clutter becomes. 1em inside it is 1% of its width. */
 
 .sw-desk {
-  --frame: 0;
+  --frame: 1;
+  --photo: 1;
   position: absolute;
   left: 50%;
   /* The whole window, from under the header to the fold. */
@@ -156,7 +157,6 @@ h2 span { color: var(--blue); }
   padding: 1em 1.1em; border: 1px solid var(--app-line); border-radius: 1.2em;
   background: rgb(255 255 255 / 0.82); backdrop-filter: blur(18px) saturate(1.4);
   box-shadow: 0 1em 3em rgb(20 20 60 / 0.12);
-  opacity: 0;
 }
 .sw-prompt { display: block; margin-bottom: 1.3em; font-size: 1.06em; color: var(--app-soft); }
 .sw-row { display: flex; align-items: center; justify-content: space-between; color: var(--app-soft); font-size: 0.92em; }
@@ -166,7 +166,7 @@ h2 span { color: var(--blue); }
 .sw-cards { position: absolute; inset: 60% 17% auto; z-index: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8em; }
 .sw-cards .w { font-size: 0.86em; opacity: 0; will-change: transform, opacity; }
 
-/* ---- Once the story is told, the words that stay. */
+/* ---- The words over the sky, there from the start. */
 
 .sw-end {
   position: absolute; left: 0; right: 0; top: 8%; z-index: 5;
@@ -174,7 +174,7 @@ h2 span { color: var(--blue); }
   opacity: 0; transform: translateY(16px); visibility: hidden;
   transition: opacity 0.7s var(--out), transform 0.8s var(--out), visibility 0s 0.8s;
 }
-.sw-scene.full .sw-end { opacity: 1; transform: none; visibility: visible; transition-delay: 0.15s; transition-property: opacity, transform, visibility; transition-duration: 0.7s, 0.8s, 0s; }
+.sw-scene.on .sw-end { opacity: 1; transform: none; visibility: visible; transition-delay: 0.15s; transition-property: opacity, transform, visibility; transition-duration: 0.7s, 0.8s, 0s; }
 .sw-end-title { font-size: clamp(36px, 4.6vw, 64px); font-weight: 500; line-height: 1; letter-spacing: -0.045em; text-shadow: 0 2px 24px rgb(0 10 60 / 0.35); }
 .sw-end-line { font-size: clamp(15px, 1.2vw, 18px); opacity: 0.9; text-shadow: 0 1px 10px rgb(0 10 60 / 0.4); }
 .sw-end-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 8px; }

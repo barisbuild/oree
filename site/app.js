@@ -135,9 +135,7 @@ drawIcons();
 // played, `p`, from 0.36 to END over PLAY_LENGTH:
 //   0.36–0.46  the files gather, a small pile for each widget
 //   0.44–0.72  each pile opens into its widget, one after another
-//   0.50–0.62  the task box arrives
-//   0.60–0.74  the picture prints in, the screen forms round it all
-// Then the words that stay come in over the sky.
+// The picture, the words and the task box are there from the start.
 
 const scene = $("[data-scene]");
 const desk = $("[data-desk]");
@@ -190,11 +188,19 @@ function measure() {
     const at = element.getBoundingClientRect();
     return { x: at.left - sceneBox.left + at.width / 2, y: at.top - sceneBox.top + at.height / 2 };
   });
+  // The files lie strewn over the area the widgets will take.
+  const all = deck.getBoundingClientRect();
+  for (const file of strewn) {
+    file.lies = {
+      x: all.left - sceneBox.left + (file.x - 0.05) / 0.9 * all.width,
+      y: all.top - sceneBox.top + (file.y - 0.1) / 0.82 * all.height,
+    };
+  }
   // Each pile forms between its strewn and the widget it will become.
   piles = cards.map((_, index) => {
     const own = strewn.filter((file) => file.target === index);
     if (!own.length) return null;
-    const middle = own.reduce((sum, file) => ({ x: sum.x + file.x * size.w / own.length, y: sum.y + file.y * size.h / own.length }), { x: 0, y: 0 });
+    const middle = own.reduce((sum, file) => ({ x: sum.x + file.lies.x / own.length, y: sum.y + file.lies.y / own.length }), { x: 0, y: 0 });
     return { x: mix(middle.x, homes[index].x, 0.45), y: mix(middle.y, homes[index].y, 0.45) };
   });
 }
@@ -226,7 +232,7 @@ function tell() {
   const gather = ease(span(p, 0.36, 0.46));
 
   for (const file of strewn) {
-    const lies = { x: file.x * size.w, y: file.y * size.h };
+    const { lies } = file;
     const pile = piles[file.target];
     const open = opened[file.target];
     // To its pile, stacked a little off true, then into the widget.
@@ -247,17 +253,12 @@ function tell() {
     element.style.opacity = clamp(opened[index] * 2.4).toFixed(3);
   });
 
-  // The task box, the picture, the screen round it all.
-  const boxIn = settleInto(span(p, 0.5, 0.62));
-  box.style.opacity = clamp(boxIn).toFixed(3);
-  box.style.transform = `translateY(${((1 - boxIn) * 18).toFixed(1)}px)`;
+  // The picture is there from the start; only the widgets are made.
   deck.style.opacity = "";
   deck.style.filter = "";
-  desk.style.setProperty("--photo", ease(span(p, 0.6, 0.7)).toFixed(3));
-  desk.style.setProperty("--frame", ease(span(p, 0.62, 0.74)).toFixed(3));
 
   // The picture is heroPrinted into focus as it appears, once.
-  if (p > 0.62 && !heroPrinted) {
+  if (!heroPrinted) {
     heroPrinted = true;
     resolve(heroPicture);
   }
@@ -272,10 +273,10 @@ function queueTell() {
 addEventListener("scroll", turnWheel, { passive: true });
 
 // The story plays once, as soon as the page is ready: the clutter is
-// seen for a moment, then gathers into the widgets and the picture.
-const PLAY_DELAY = 450;
-const PLAY_LENGTH = 3400;
-const END = 0.74;
+// seen for a moment where the widgets will be, then gathers into them.
+const PLAY_DELAY = 700;
+const PLAY_LENGTH = 3000;
+const END = 0.72;
 let heroP = 0.36;
 function play() {
   let started = null;
@@ -292,8 +293,6 @@ function play() {
       requestAnimationFrame(frame);
       return;
     }
-    // Once the last widget is in place, the words come in.
-    scene.classList.add("full");
   };
   requestAnimationFrame(frame);
 }
