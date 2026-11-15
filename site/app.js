@@ -1,5 +1,9 @@
 import { icons } from "./icons.js";
 
+// Every load starts at the top, where the story plays.
+history.scrollRestoration = "manual";
+scrollTo(0, 0);
+
 const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const narrow = matchMedia("(max-width: 860px)");
 const clamp = (value, low = 0, high = 1) => Math.min(high, Math.max(low, value));
@@ -330,7 +334,7 @@ function queueTell() {
 addEventListener("scroll", turnWheel, { passive: true });
 
 // The story plays once, slowly, from a moment after the page appears.
-const PLAY_DELAY = 1800;
+const PLAY_DELAY = 300;
 const PLAY_LENGTH = 15000;
 let heroP = 0;
 function play() {
