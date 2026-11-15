@@ -48,7 +48,7 @@ canvas.picture { display: block; width: 100%; image-rendering: pixelated; }
 /* The header: a white card floating over the page, there at every scroll. */
 .nav { position: fixed; top: 14px; left: 0; right: 0; z-index: 30; padding: 0 20px; pointer-events: none; }
 .bar {
-  display: flex; align-items: center; gap: 44px; max-width: 1160px; height: 72px; margin: 0 auto; padding: 0 10px 0 26px;
+  display: flex; align-items: center; gap: 44px; max-width: 1160px; height: 72px; margin: 0 auto; padding: 0 0 0 26px; overflow: hidden;
   border-radius: 18px; background: rgb(255 255 255 / 0.9); backdrop-filter: blur(16px) saturate(1.6);
   box-shadow: 0 1px 2px rgb(16 16 30 / 0.06), 0 10px 30px -12px rgb(16 16 30 / 0.22); pointer-events: auto;
 }
@@ -57,16 +57,16 @@ canvas.picture { display: block; width: 100%; image-rendering: pixelated; }
 /* Across from the name: the app's icon set flush in the corner of a small
    framed box, the call, and an arrow. */
 .get {
-  display: flex; align-items: center; gap: 14px; height: 48px; margin-left: auto; padding: 3px 16px 3px 3px;
-  border: 1px solid var(--line); border-radius: 13px; background: #fff;
+  display: flex; align-items: center; gap: 16px; align-self: stretch; margin-left: auto; padding: 0 22px 0 0; overflow: hidden;
+  border-left: 1px solid var(--line); border-radius: 0 18px 18px 0; background: #fff;
   font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink);
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s var(--out);
+  transition: background 0.2s;
 }
-.get img { align-self: stretch; width: auto; height: auto; aspect-ratio: 1; border-radius: 9px; object-fit: cover; }
+/* The icon takes the box's full height, flush to its edge. */
+.get img { align-self: stretch; width: auto; height: auto; aspect-ratio: 1; object-fit: cover; }
 .get svg { width: 17px; height: 17px; transition: transform 0.25s var(--out); }
-.get:hover { border-color: #d0d0d8; box-shadow: 0 6px 16px -8px rgb(16 16 30 / 0.25); }
+.get:hover { background: #f7f7f9; }
 .get:hover svg { transform: translateX(3px); }
-.get:active { transform: scale(0.98); }
 
 .button {
   display: inline-flex;
@@ -524,7 +524,7 @@ footer a:hover { color: var(--ink); }
   .bar { gap: 12px; height: 62px; padding-left: 16px; }
   .brand { font-size: 21px; }
   .mark { width: 30px; height: 30px; }
-  .get { gap: 10px; height: 44px; padding-right: 12px; font-size: 12px; }
+  .get { gap: 10px; padding-right: 14px; font-size: 12px; }
   .sw-end { position: static; order: -1; padding: 0 20px; color: var(--ink); opacity: 1; transform: none; visibility: visible; }
   .sw-end-title, .sw-end-line { text-shadow: none; }
   .sw-end-line { color: var(--soft); }
