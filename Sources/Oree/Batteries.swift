@@ -23,6 +23,15 @@ final class BatteryFeed {
     private(set) var devices: [Device] = []
 
     func refresh() {
+        if Demo.on {
+            devices = [
+                Device(id: "mac", name: "This Mac", icon: .laptop, level: 71, charging: true, stale: false),
+                Device(id: "buds", name: "AirPods", icon: .earbuds, level: 92, charging: false, stale: false),
+                Device(id: "case", name: "Case", icon: .earbudsCase, level: 64, charging: false, stale: false),
+                Device(id: "keys", name: "Keyboard", icon: .keyboard, level: 38, charging: false, stale: false),
+            ]
+            return
+        }
         Task.detached(priority: .utility) {
             let all = Self.thisMac() + Self.bluetooth()
             let known = all.filter { $0.level != nil }

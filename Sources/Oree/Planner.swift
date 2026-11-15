@@ -26,6 +26,13 @@ final class RemindersFeed {
     }
 
     func refresh() {
+        if Demo.on {
+            access = .granted
+            items = [("Renew the passport", 3), ("Send the invoice", 5), ("Water the plants", nil)].map { title, days in
+                Item(id: title, title: title, due: days.map { Demo.at(9, 0, daysOn: $0) }, reminder: EKReminder(eventStore: events))
+            }
+            return
+        }
         events.requestFullAccessToReminders { [weak self] granted, _ in
             guard let self else { return }
             guard granted else {
@@ -127,6 +134,15 @@ final class CalendarFeed {
     }
 
     func refresh() {
+        if Demo.on {
+            access = .granted
+            events = [
+                Event(id: "a", title: "Design review", start: Demo.at(10, 30), allDay: false, colour: .orange),
+                Event(id: "b", title: "Lunch at the harbour", start: Demo.at(13, 0), allDay: false, colour: .blue),
+                Event(id: "c", title: "Flight to Lisbon", start: Demo.at(7, 15, daysOn: 1), allDay: false, colour: .green),
+            ]
+            return
+        }
         store.requestFullAccessToEvents { [weak self] granted, _ in
             guard let self else { return }
             guard granted else {

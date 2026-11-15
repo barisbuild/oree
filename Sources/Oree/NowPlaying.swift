@@ -70,6 +70,15 @@ final class NowPlaying {
         """
 
     init() {
+        if Demo.on {
+            title = "Low Tide"
+            artist = "Halden"
+            source = "Music"
+            isPlaying = true
+            sourceIcon = NSWorkspace.shared.icon(forFile: "/System/Applications/Music.app")
+            artwork = Self.demoCover()
+            return
+        }
         try? Self.readScript.write(to: Self.reader, atomically: true, encoding: .utf8)
         try? Self.sendScript.write(to: Self.sender, atomically: true, encoding: .utf8)
         read()
@@ -124,7 +133,24 @@ final class NowPlaying {
         }
     }
 
-    func toggle() { send(2) }
+    /// A made-up cover: a deep blue sky with a low sun.
+    private static func demoCover() -> NSImage {
+        NSImage(size: NSSize(width: 600, height: 600), flipped: false) { rect in
+            NSGradient(colors: [
+                NSColor(red: 0.98, green: 0.62, blue: 0.42, alpha: 1),
+                NSColor(red: 0.55, green: 0.33, blue: 0.62, alpha: 1),
+                NSColor(red: 0.12, green: 0.14, blue: 0.42, alpha: 1),
+            ])?.draw(in: rect, angle: 90)
+            NSColor(red: 1, green: 0.85, blue: 0.62, alpha: 0.9).setFill()
+            NSBezierPath(ovalIn: NSRect(x: 230, y: 150, width: 140, height: 140)).fill()
+            return true
+        }
+    }
+
+    func toggle() {
+        if Demo.on { isPlaying.toggle(); return }
+        send(2)
+    }
     func next() { send(4) }
     func previous() { send(5) }
 

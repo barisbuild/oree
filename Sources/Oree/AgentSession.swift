@@ -80,6 +80,7 @@ final class AgentSession: Identifiable {
         self.agent = agent
         self.folder = folder
         self.bypass = bypass
+        if Demo.on { return }
         switch agent {
         case .claude:
             run("exec claude --print --input-format stream-json --output-format stream-json --verbose --permission-prompt-tool stdio --append-system-prompt '\(Self.desktopBrief)'")
@@ -95,11 +96,31 @@ final class AgentSession: Identifiable {
         guard state != .ended else { return }
         entries.append(Entry(kind: .user, text: shown ?? text))
         state = .working
+        if Demo.on {
+            playDemo()
+            return
+        }
         switch agent {
         case .claude:
             write(["type": "user", "message": ["role": "user", "content": text]])
         case .codex:
             if thread == nil { early.append(text) } else { askCodex(text) }
+        }
+    }
+
+    /// For recordings: a short, believable turn with nothing actually run.
+    private func playDemo() {
+        let steps: [(Double, Entry.Kind, String)] = [
+            (0.4, .tool, "Shell: ls -lt ~/Downloads"),
+            (0.7, .tool, "Shell: mkdir -p ~/Downloads/{September,October,November}"),
+            (1.0, .tool, "Shell: mv ~/Downloads/*.pdf ~/Downloads/November/"),
+            (1.35, .assistant, "Done. Your Downloads are sorted into **September**, **October** and **November**, 46 files in all. Nothing was deleted."),
+        ]
+        for (delay, kind, text) in steps {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                self?.entries.append(Entry(kind: kind, text: text))
+                if kind == .assistant { self?.state = .idle }
+            }
         }
     }
 

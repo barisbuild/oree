@@ -23,6 +23,17 @@ final class MailFeed {
     private static let bundle = "com.apple.mail"
 
     func refresh() {
+        if Demo.on {
+            messages = [
+                Message(id: 1, subject: "Your tickets for Friday", sender: "Box office", unread: true),
+                Message(id: 2, subject: "Invoice 0142 is paid", sender: "Billing", unread: true),
+                Message(id: 3, subject: "Notes from Tuesday", sender: "Studio", unread: false),
+                Message(id: 4, subject: "The week in type", sender: "Newsletter", unread: false),
+                Message(id: 5, subject: "Proofs are ready", sender: "Print shop", unread: false),
+            ]
+            state = .ready
+            return
+        }
         let mailIsOpen = !NSRunningApplication.runningApplications(withBundleIdentifier: Self.bundle).isEmpty
         Task.detached(priority: .utility) {
             let found = Self.readIndex() ?? (mailIsOpen ? Self.askMail() : nil)

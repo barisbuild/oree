@@ -37,6 +37,11 @@ enum Snapshot {
     private static func click() {
         let file = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("oree-click")
         let request = (try? String(contentsOf: file, encoding: .utf8)) ?? ""
+        // "film": record the scripted demo (see Film).
+        if request.hasPrefix("film"), let window = Self.mainDesktop {
+            MainActor.assumeIsolated { Film.run(in: window) }
+            return
+        }
         // "type some words": put the words in the focused field and press Return.
         // "fill some words": the same without Return.
         if request.hasPrefix("type ") || request.hasPrefix("fill ") {

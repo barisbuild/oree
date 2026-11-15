@@ -33,6 +33,16 @@ final class WeatherFeed: NSObject, CLLocationManagerDelegate {
 
     /// Weather moves slowly: read it at most every half hour.
     func refresh() {
+        if Demo.on {
+            place = "Lisbon"
+            temperature = 18
+            summary = "Partly cloudy"
+            icon = .sunCloud
+            days = [("Today", Icon.sunCloud, 20, 14), ("Sun", .sun, 23, 15), ("Mon", .rain, 19, 13), ("Tue", .cloud, 18, 12)]
+                .enumerated().map { Day(id: $0.offset, name: $0.element.0, icon: $0.element.1, high: $0.element.2, low: $0.element.3) }
+            state = .ready
+            return
+        }
         guard Date().timeIntervalSince(lastRead) > 30 * 60 else { return }
         switch locator.authorizationStatus {
         case .notDetermined: locator.requestWhenInUseAuthorization()
