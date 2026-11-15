@@ -55,8 +55,8 @@ const widgets = [
   {
     key: "playing", icon: "music", name: "Now playing", line: "Whatever is playing in any app, with controls.",
     html: `<h3>${icon("music")}Now playing</h3>
-      <div class="playing"><span class="cover"></span><div><strong>Low Tide</strong><small>Halden · Music</small><u></u>
-      <span class="controls">${icon("arrowLeft")}<b>${icon("pause")}</b>${icon("arrowRight")}</span></div></div>`,
+      <div class="playing"><span class="cover"></span><div><strong>Low Tide</strong><small>Halden · Music</small>
+      <span class="controls"><i>${icon("arrowLeft")}</i><b>${icon("pause")}</b><i>${icon("arrowRight")}</i></span></div></div>`,
   },
   {
     key: "weather", icon: "sunCloud", name: "Weather", line: "Now, and the next four days, where you are.",

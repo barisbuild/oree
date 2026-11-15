@@ -234,15 +234,17 @@ h2 span { color: var(--faint); }
 .mail .unread b { background: var(--app-blue); }
 .mail li { overflow: hidden; }
 
-.playing { display: flex; gap: 1.1em; align-items: stretch; margin: auto 0; }
-.cover { width: 6.6em; aspect-ratio: 1; border-radius: 0.9em; background: radial-gradient(circle at 30% 30%, #9db0ff, #2f3bd9 58%, #11144f); }
-.playing div { display: flex; flex-direction: column; min-width: 0; flex: 1; }
-.playing strong { font-weight: 600; }
-.playing small { font-size: 0.82em; color: var(--app-soft); }
-.playing u { display: block; height: 0.22em; margin-top: 0.8em; border-radius: 1em; background: rgb(16 16 30 / 0.1); overflow: hidden; }
-.playing u::after { content: ""; display: block; height: 100%; background: var(--app-text); animation: play 14s linear infinite; }
-.controls { display: flex; align-items: center; gap: 0.9em; margin-top: auto; font-size: 1.25em; }
-.controls b { display: grid; place-items: center; width: 2.1em; height: 2.1em; border-radius: 50%; background: rgb(16 16 30 / 0.08); }
+/* As in the app: the cover and the column beside it are one height; the
+   words hang from its top edge, the three buttons sit on its foot. */
+.playing { display: flex; gap: 1.1em; align-items: flex-start; margin: auto 0; }
+.cover { flex: none; width: 7.6em; height: 7.6em; border-radius: 0.9em; background: radial-gradient(circle at 30% 30%, #9db0ff, #2f3bd9 58%, #11144f); }
+.playing div { display: flex; flex-direction: column; gap: 0.25em; height: 7.6em; min-width: 0; flex: 1; }
+.playing strong { font-size: 0.95em; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.playing small { font-size: 0.8em; color: var(--app-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.controls { display: flex; align-items: center; gap: 0.45em; margin-top: auto; }
+.controls i, .controls b { display: grid; place-items: center; width: 2.45em; height: 2.45em; border-radius: 50%; }
+.controls b { background: rgb(16 16 30 / 0.07); }
+.controls svg { width: 1.15em; height: 1.15em; }
 
 .weather { display: flex; flex-direction: column; flex: 1; }
 .now { display: flex; align-items: center; justify-content: space-between; gap: 0.8em; padding-top: 0.2em; }
@@ -435,7 +437,7 @@ footer a:hover { color: var(--ink); }
   .rv, .mac, .menubar, .grid .w { transition: none; }
   .scene.on .composer { animation: none; --shown: 1; }
   [data-reveal] { opacity: 1; transform: none; filter: none; transition: none; }
-  .ring.charging svg, .reply b, .prompt b, .playing u::after, .thread .ask b { animation: none; }
+  .ring.charging svg, .reply b, .prompt b, .thread .ask b { animation: none; }
   .ring.charging svg:last-child { opacity: 0; }
   .thread p, .button { transition: none; }
 }
