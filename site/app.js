@@ -286,7 +286,7 @@ addEventListener("scroll", turnWheel, { passive: true });
 
 // The story plays once, as soon as the page is ready: the clutter is
 // seen for a moment where the widgets will be, then gathers into them.
-const PLAY_DELAY = 500;
+const PLAY_DELAY = 850;
 const PLAY_LENGTH = 3000;
 const END = 0.72;
 let heroP = 0.36;
