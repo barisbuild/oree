@@ -79,17 +79,7 @@ struct FocusWidget: View {
                     .help(timer.running ? "Pause" : "Start")
                 }
                 Spacer(minLength: 0)
-                GeometryReader { bar in
-                    Capsule()
-                        .fill(Theme.panel)
-                        .overlay(alignment: .leading) {
-                            Capsule()
-                                .fill(Theme.primary)
-                                .frame(width: bar.size.width * timer.progress)
-                                .animation(.linear(duration: 0.5), value: timer.progress)
-                        }
-                }
-                .frame(height: 3)
+                Ruler(remaining: timer.remaining / 60)
             }
             .frame(maxHeight: .infinity)
             .contentShape(Rectangle())
@@ -102,5 +92,54 @@ struct FocusWidget: View {
     private var clock: String {
         let seconds = Int(timer.remaining.rounded(.up))
         return String(format: "%02d:%02d", seconds / 60, seconds % 60)
+    }
+}
+
+/// A kitchen timer's scale laid flat: an hour, a tick for every minute and
+/// a longer one with its number every five, sliding under a fixed needle
+/// that points at the minutes left. Past the needle the scale is dimmed.
+private struct Ruler: View {
+    let remaining: Double
+
+    private static let spacing: CGFloat = 9
+
+    var body: some View {
+        Canvas { context, size in
+            let middle = size.width / 2
+            for minute in 0...60 {
+                let x = middle + (CGFloat(minute) - remaining) * Self.spacing
+                guard x > -12, x < size.width + 12 else { continue }
+                let major = minute % 5 == 0
+                let past = Double(minute) > remaining
+                let tick = Path(CGRect(x: x - 0.5, y: 8, width: 1, height: major ? 13 : 7))
+                context.fill(tick, with: .color(Theme.secondary.opacity(past ? 0.35 : 1)))
+                if major {
+                    context.draw(
+                        Text("\(minute)")
+                            .font(.caption2.monospacedDigit())
+                            .foregroundStyle(Theme.secondary.opacity(past ? 0.35 : 1)),
+                        at: CGPoint(x: x, y: 31)
+                    )
+                }
+            }
+        }
+        // The scale fades out at both ends rather than stopping short.
+        .mask(
+            LinearGradient(
+                stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.2),
+                        .init(color: .black, location: 0.8), .init(color: .clear, location: 1)],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        )
+        .overlay(alignment: .top) {
+            Capsule()
+                .fill(Theme.accent)
+                .frame(width: 2.5, height: 24)
+        }
+        .frame(height: 38)
+        // Edge to edge across the card, past its padding.
+        .padding(.horizontal, -14)
+        .accessibilityHidden(true)
     }
 }
