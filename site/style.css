@@ -83,7 +83,7 @@ canvas.picture { display: block; width: 100%; image-rendering: pixelated; }
 
 h1, h2 { font-weight: 500; letter-spacing: -0.045em; text-wrap: balance; }
 h2 { font-size: clamp(32px, 4.8vw, 60px); line-height: 1.04; }
-h2 span { color: var(--faint); }
+h2 span { color: var(--blue); }
 .eyebrow { font: 500 12.5px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--blue); }
 
 /* ---- Hero: a cursor sweeps the clutter of a desktop into Oree. The script
