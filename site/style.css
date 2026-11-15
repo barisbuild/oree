@@ -578,3 +578,22 @@ footer a:hover { color: var(--ink); }
   .tilt-stage { --tilt: 0 !important; }
   .tilt-notes li { animation: none; }
 }
+
+/* ---- The privacy page */
+
+.legal-page { background: var(--bg); }
+.legal { width: min(720px, 100vw - 40px); margin: 0 auto; padding: 140px 0 60px; font-size: 16.5px; line-height: 1.65; }
+.legal h1 { font-size: clamp(40px, 6vw, 60px); letter-spacing: -0.04em; line-height: 1; }
+.legal .lead { margin-top: 20px; font-size: 19px; color: var(--ink); }
+.legal .updated { margin-top: 10px; font-size: 14px; color: var(--soft); }
+.legal h2 { margin-top: 48px; font-size: 24px; letter-spacing: -0.025em; }
+.legal p, .legal ul, .legal table { margin-top: 14px; color: var(--soft); }
+.legal ul { display: grid; gap: 8px; padding-left: 20px; list-style: disc; }
+.legal strong { color: var(--ink); font-weight: 600; }
+.legal a { color: var(--blue); text-decoration: underline; text-underline-offset: 3px; }
+.legal code { font: 0.9em var(--mono); color: var(--ink); }
+.legal table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.legal th { padding: 10px 12px 10px 0; text-align: left; font-weight: 600; color: var(--ink); border-bottom: 1px solid var(--line); }
+.legal td { padding: 12px 12px 12px 0; vertical-align: top; border-bottom: 1px solid var(--line); }
+.legal td:first-child { color: var(--ink); font-weight: 500; white-space: nowrap; }
+@media (max-width: 640px) { .legal td:first-child { white-space: normal; } .legal table { font-size: 14px; } }

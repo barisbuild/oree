@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oree · Privacy</title>
+<meta name="description" content="What Oree asks your Mac for, why, and what ever leaves it.">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="legal-page">
+
+<header class="nav">
+  <div class="bar">
+    <a class="brand" href="/" aria-label="Oree, home"><span class="mark" aria-hidden="true"></span>Oree</a>
+    <a class="get" href="https://github.com/barisbuild/oree">
+      <img src="mark.png" alt="" width="20" height="20">
+      <span>Get Oree</span>
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h15m-6-6.5L19.5 12 13 18.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+  </div>
+</header>
+
+<main class="legal">
+  <h1>Privacy</h1>
+  <p class="lead">Oree runs on your Mac and has no server, no account and no analytics. It asks macOS for a few things so the desktop can show them. Here is each one, why, and what ever leaves your Mac.</p>
+  <p class="updated">Last updated 15 November 2026</p>
+
+  <h2>In short</h2>
+  <ul>
+    <li>Your calendar, reminders, mail, files and conversations are read on your Mac and stay there.</li>
+    <li>Oree collects nothing about you and sends nothing to us. There is no "us" to send it to: there is no Oree server.</li>
+    <li>Three small requests go to outside services: the weather, the name of the place for the weather, and album covers. Each is described below.</li>
+    <li>When you use the assistant, what you ask goes to the AI service you signed in to yourself, under its own terms.</li>
+    <li>Every permission can be turned off in System Settings, and Oree keeps working without it.</li>
+  </ul>
+
+  <h2>What Oree asks for, and why</h2>
+  <p>macOS asks you once for each of these and remembers your answer. You can change any of them later in System Settings, under Privacy &amp; Security.</p>
+  <table>
+    <thead><tr><th>Permission</th><th>What it is for</th><th>Without it</th></tr></thead>
+    <tbody>
+      <tr><td>Calendars</td><td>The Calendar widget: today's and tomorrow's events.</td><td>The widget asks for access instead.</td></tr>
+      <tr><td>Reminders</td><td>The Reminders widget: your open reminders, ticking them off, adding a new one.</td><td>The widget asks for access instead.</td></tr>
+      <tr><td>Location</td><td>The Weather widget, for where you are. Only an approximate position is used.</td><td>No weather.</td></tr>
+      <tr><td>Desktop, Documents and Downloads folders</td><td>Showing and opening the files in those folders, as Finder's desktop does.</td><td>Those folders show as empty.</td></tr>
+      <tr><td>Full Disk Access (optional)</td><td>Reading Mail's own index on your Mac, so the Mail widget shows your newest messages without Mail being open.</td><td>The Mail widget works only while Mail is open.</td></tr>
+      <tr><td>Automation</td><td>"Show in Finder", the newest mail from Mail when it is open, and what is playing in your music or video app with play, pause and skip.</td><td>Those actions do nothing.</td></tr>
+    </tbody>
+  </table>
+  <p>Oree also reads, without asking because macOS does not require it, the battery levels your Mac already tracks for itself and its accessories, for the Batteries widget.</p>
+
+  <h2>What leaves your Mac</h2>
+  <ul>
+    <li><strong>Weather.</strong> Your position, rounded to about a kilometre, is sent to <a href="https://open-meteo.com">Open-Meteo</a> to fetch the forecast. Nothing else goes with it.</li>
+    <li><strong>Place name.</strong> macOS's own location service turns that position into a town name for the widget. This goes through Apple, as it does for any app.</li>
+    <li><strong>Album covers.</strong> When Apple Music plays a song, Oree asks Apple's public iTunes lookup for its cover, by the song's catalogue number. Nothing about you goes with it.</li>
+    <li><strong>The assistant.</strong> Oree does not contain an AI model and holds no keys. It runs Claude Code, the command-line agent from Anthropic that you installed and signed in to yourself. What you type, and any files you ask about or that the agent reads, are sent by that agent to its provider under the terms you agreed with them. By default it asks before it changes anything; Oree shows each request with Allow and Don't allow.</li>
+  </ul>
+  <p>Nothing else is sent anywhere. Oree has no crash reporting, analytics, tracking or advertising.</p>
+
+  <h2>What Oree keeps</h2>
+  <ul>
+    <li>Your settings, in macOS's own preferences for Oree.</li>
+    <li>Your conversations with the assistant, in <code>~/Library/Application Support/Oree</code>, so you can pick them up again. Delete that folder to clear them.</li>
+  </ul>
+  <p>Both stay on your Mac. Oree keeps no copy of your calendar, reminders, mail or files; it reads them when it shows them.</p>
+
+  <h2>What Oree changes</h2>
+  <p>While Oree is your desktop it hides Finder's own desktop, starts at login, and opens folders that would open in Finder. "Give back to Finder" in Settings undoes all three.</p>
+
+  <h2>This website</h2>
+  <p>oree.space sets no cookies and runs no analytics. It is served by Cloudflare, and its fonts come from Google Fonts, so both see the ordinary details of any web request, such as your IP address.</p>
+
+  <h2>Open source</h2>
+  <p>Everything above can be checked: Oree's code is public on <a href="https://github.com/barisbuild/oree">GitHub</a>. Questions or concerns are welcome there as an issue.</p>
+</main>
+
+<footer>
+  <span class="brand"><span class="mark" aria-hidden="true"></span>Oree</span>
+  <nav aria-label="Footer"><a href="https://github.com/barisbuild/oree">GitHub</a><a href="/">Home</a></nav>
+</footer>
+
+</body>
+</html>
