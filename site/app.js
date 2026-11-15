@@ -128,7 +128,7 @@ drawIcons();
 
 // ---- The hero: a cursor sweeps the clutter of a desktop into Oree.
 // Each moving part's place is worked out from how far the page has
-// scrolled, `p`, from 0 to 1:
+// played, `p`, from 0 to 1 over PLAY_LENGTH:
 //   0.06–0.32  the heroPointer drags a rectangle across the strewn; the words go
 //   0.36–0.46  what it picked gathers, a small pile for each widget
 //   0.44–0.72  each pile opens into its widget, one after another
@@ -245,7 +245,7 @@ function tell() {
     turnWheel();
     return;
   }
-  const p = clamp(scrollY / (section.offsetHeight - innerHeight));
+  const p = heroP;
 
   // The words make way as the rectangle reaches them.
   const gone = ease(span(p, 0.2, 0.32));
@@ -327,7 +327,26 @@ function queueTell() {
     requestAnimationFrame(tell);
   }
 }
-addEventListener("scroll", queueTell, { passive: true });
+addEventListener("scroll", turnWheel, { passive: true });
+
+// The story plays once, slowly, from a moment after the page appears.
+const PLAY_DELAY = 1800;
+const PLAY_LENGTH = 15000;
+let heroP = 0;
+function play() {
+  let started = null;
+  let last = null;
+  const frame = (now) => {
+    // Time spent in a hidden tab does not count: the story waits.
+    if (last !== null && now - last > 200) started += now - last;
+    last = now;
+    started ??= now;
+    heroP = clamp((now - started - PLAY_DELAY) / PLAY_LENGTH);
+    tell();
+    if (heroP < 1) requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
 addEventListener("resize", () => {
   measure();
   queueTell();
@@ -490,6 +509,7 @@ Promise.all([photoReady, document.fonts?.ready]).then(() => {
   heroPrinted = fixed();
   tell();
   requestAnimationFrame(() => scene.classList.add("on"));
+  if (!fixed()) play();
 });
 
 for (const button of $$("[data-look]")) {
@@ -696,15 +716,17 @@ function showConversation() {
   }
 }
 
-// The assistant's screen lies flat as it comes up the page.
-const askStage = $(".ask-stage");
-function tiltAsk() {
-  const top = askStage.getBoundingClientRect().top;
-  askStage.style.setProperty("--tilt", fixed() ? "0" : (1 - ease(span(innerHeight - top, 80, innerHeight * 0.75))).toFixed(4));
+// Each screen lies flat as it comes up the page.
+const stages = $$(".tilt-stage");
+function tiltStages() {
+  for (const stage of stages) {
+    const top = stage.getBoundingClientRect().top;
+    stage.style.setProperty("--tilt", fixed() ? "0" : (1 - ease(span(innerHeight - top, 80, innerHeight * 0.75))).toFixed(4));
+  }
 }
-addEventListener("scroll", () => requestAnimationFrame(tiltAsk), { passive: true });
-addEventListener("resize", tiltAsk);
-tiltAsk();
+addEventListener("scroll", () => requestAnimationFrame(tiltStages), { passive: true });
+addEventListener("resize", tiltStages);
+tiltStages();
 
 // ---- What happens as things scroll into view
 
