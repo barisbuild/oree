@@ -647,32 +647,42 @@ const say = (kind, html) => {
 };
 const REQUEST = "Tidy my Downloads into folders by month";
 const ANSWER = "Done. 46 files are now in five folders, one for each month. Nothing was deleted.";
-let conversing = false;
+// Each playing has its own number; when a newer one starts, or the chat
+// leaves the screen, the older one stops at its next pause.
+let conversation = 0;
+const STOPPED = Symbol("stopped");
 
 async function converse() {
-  if (conversing) return;
-  conversing = true;
-  while (conversing) {
-    thread.replaceChildren();
-    typing.textContent = "";
-    await wait(700);
-    for (const letter of REQUEST) {
-      typing.textContent += letter;
-      await wait(26 + Math.random() * 40);
+  const run = ++conversation;
+  const pause = async (ms) => {
+    await wait(ms);
+    if (run !== conversation) throw STOPPED;
+  };
+  try {
+    for (;;) {
+      thread.replaceChildren();
+      typing.textContent = "";
+      await pause(700);
+      for (const letter of REQUEST) {
+        typing.textContent += letter;
+        await pause(26 + Math.random() * 40);
+      }
+      await pause(350);
+      typing.textContent = "";
+      say("you", REQUEST);
+      await pause(900);
+      say("tool", "Bash: ls -lt ~/Downloads");
+      await pause(1100);
+      const ask = say("ask", "mv ~/Downloads/*.pdf ~/Downloads/2026-11/ <i>Don’t allow</i><b>Allow</b>");
+      await pause(2100);
+      ask.className = "tool in";
+      ask.textContent = "Allowed · mv ~/Downloads/*.pdf ~/Downloads/2026-11/";
+      await pause(1000);
+      say("", ANSWER);
+      await pause(5200);
     }
-    await wait(350);
-    typing.textContent = "";
-    say("you", REQUEST);
-    await wait(900);
-    say("tool", "Bash: ls -lt ~/Downloads");
-    await wait(1100);
-    const ask = say("ask", "mv ~/Downloads/*.pdf ~/Downloads/2026-11/ <i>Don’t allow</i><b>Allow</b>");
-    await wait(2100);
-    ask.className = "tool in";
-    ask.textContent = "Allowed · mv ~/Downloads/*.pdf ~/Downloads/2026-11/";
-    await wait(1000);
-    say("", ANSWER);
-    await wait(5200);
+  } catch (reason) {
+    if (reason !== STOPPED) throw reason;
   }
 }
 
@@ -716,7 +726,7 @@ whenSeen(files, () => {
   demonstrate();
 }, () => (demonstrate.inView = false));
 
-whenSeen(thread.parentElement, () => (still ? showConversation() : converse()), () => (conversing = false), 0.3);
+whenSeen(thread.parentElement, () => (still ? showConversation() : converse()), () => conversation++, 0.3);
 
 let printed = false;
 whenSeen(plate, () => {
