@@ -61,7 +61,7 @@ const widgets = [
   {
     key: "weather", icon: "sunCloud", name: "Weather", line: "Now, and the next four days, where you are.",
     html: `<h3>${icon("sunCloud")}Lisbon</h3>
-      <div class="weather"><div class="now"><span><strong>18°</strong><small>Partly cloudy <i>H 20° L 14°</i></small></span><b>${icon("sunCloud")}</b></div>
+      <div class="weather"><div class="now"><span><strong>18°</strong><small>Partly cloudy&ensp;<i>H 20° L 14°</i></small></span><b>${icon("sunCloud")}</b></div>
       <ol><li>Today${icon("sunCloud")}<i>20° 14°</i></li><li>Sun${icon("sun")}<i>23° 15°</i></li>
       <li>Mon${icon("rain")}<i>19° 13°</i></li><li>Tue${icon("cloud")}<i>18° 12°</i></li></ol></div>`,
   },

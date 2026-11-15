@@ -213,7 +213,7 @@ h2 span { color: var(--faint); }
 
 /* ---- A widget. Everything inside is in ems, so it scales with its font. */
 
-.w { display: flex; flex-direction: column; gap: 0.9em; height: 13em; padding: 1.1em; overflow: hidden; box-shadow: 0 1px 2px rgb(16 16 30 / 0.04); border: 1px solid var(--app-line); border-radius: 1.3em; background: var(--app-card); color: var(--app-text); text-align: left; }
+.w { display: flex; flex-direction: column; gap: 0.9em; height: 15em; padding: 1.1em; overflow: hidden; box-shadow: 0 1px 2px rgb(16 16 30 / 0.04); border: 1px solid var(--app-line); border-radius: 1.3em; background: var(--app-card); color: var(--app-text); text-align: left; }
 .w h3 { display: flex; align-items: center; gap: 0.5em; font-size: 1em; font-weight: 500; letter-spacing: 0; }
 .w h3 svg { color: var(--app-soft); font-size: 1.15em; }
 .w h3 em { font-style: normal; font-weight: 400; color: var(--app-soft); }
@@ -245,19 +245,20 @@ h2 span { color: var(--faint); }
 .controls b { display: grid; place-items: center; width: 2.1em; height: 2.1em; border-radius: 50%; background: rgb(16 16 30 / 0.08); }
 
 .weather { display: flex; flex-direction: column; flex: 1; }
-.now { display: flex; align-items: center; justify-content: space-between; }
-.now span { display: grid; }
+.now { display: flex; align-items: center; justify-content: space-between; gap: 0.8em; padding-top: 0.2em; }
+.now span { display: grid; gap: 0.35em; }
 .now strong { font-size: 2.7em; font-weight: 300; line-height: 1; letter-spacing: -0.03em; }
 .now small { font-size: 0.82em; }
 .now small i { font-style: normal; color: var(--app-soft); }
-.now b { display: grid; place-items: center; width: 2.1em; height: 2.1em; border-radius: 50%; background: rgb(16 16 30 / 0.07); font-size: 2em; }
-.weather ol { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: auto; padding-top: 0.8em; border-top: 1px solid var(--app-line); text-align: center; font-size: 0.82em; color: var(--app-soft); }
-.weather ol li { display: grid; justify-items: center; gap: 0.35em; }
-.weather ol svg { font-size: 1.5em; color: var(--app-text); }
+.now b { flex: none; display: grid; place-items: center; width: 3.4em; height: 3.4em; border-radius: 50%; background: rgb(16 16 30 / 0.06); }
+.now b svg { width: 1.75em; height: 1.75em; }
+.weather ol { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: auto; padding-top: 0.9em; border-top: 1px solid var(--app-line); text-align: center; font-size: 0.82em; color: var(--app-soft); }
+.weather ol li { display: grid; justify-items: center; gap: 0.45em; }
+.weather ol svg { width: 1.45em; height: 1.45em; color: var(--app-text); }
 .weather ol i { font-style: normal; color: var(--app-text); font-variant-numeric: tabular-nums; }
 
 @property --fill { syntax: "<number>"; inherits: true; initial-value: 0; }
-.rings { display: grid; grid-template-columns: repeat(2, 4.1em); gap: 0.8em 2em; place-content: center; flex: 1; }
+.rings { display: grid; grid-template-columns: repeat(2, 4.2em); gap: 0.9em 2.2em; place-content: center; flex: 1; padding-bottom: 0.3em; }
 .ring { --fill: var(--level); position: relative; display: grid; place-items: center; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(closest-side, var(--app-card) 83%, transparent 84%), conic-gradient(var(--green) calc(var(--fill) * 1%), rgb(16 16 30 / 0.08) 0); transition: --fill 1.2s var(--out); }
 .ring svg { grid-area: 1 / 1; font-size: 1.75em; }
 /* Charging: the device gives way to a green bolt, then comes back. */
@@ -302,7 +303,7 @@ h2 span { color: var(--faint); }
 .curve { --w: 23em; --r: 56em; align-self: center; width: 100%; height: 17em; font-size: clamp(12px, 1.4vw, 20px); perspective: 120em; perspective-origin: 50% 46%; }
 .wheel { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transform: translateZ(calc(var(--r) * -1)) rotateY(calc(var(--turn, 0) * -1deg)); }
 .wheel .w {
-  position: absolute; left: 50%; top: 50%; width: var(--w); margin: -6.5em 0 0 calc(var(--w) / -2);
+  position: absolute; left: 50%; top: 50%; width: var(--w); margin: -7.5em 0 0 calc(var(--w) / -2);
   transform: rotateY(calc(var(--i) * 26deg)) translateZ(var(--r));
   backface-visibility: hidden;
   opacity: var(--near, 0);
