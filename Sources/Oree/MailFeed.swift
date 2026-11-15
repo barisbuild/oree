@@ -202,12 +202,19 @@ struct MailWidget: View {
                     ForEach(feed.messages) { message in
                         Button(action: feed.openMail) {
                             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                Circle()
-                                    .fill(message.unread ? Theme.accent : .clear)
-                                    .frame(width: 6, height: 6)
+                                // The subject lines up with the title; the
+                                // unread dot sits out in the margin.
                                 Text(message.subject)
                                     .fontWeight(message.unread ? .medium : .regular)
                                     .lineLimit(1)
+                                    .overlay(alignment: .leading) {
+                                        if message.unread {
+                                            Circle()
+                                                .fill(Theme.accent)
+                                                .frame(width: 6, height: 6)
+                                                .offset(x: -10)
+                                        }
+                                    }
                                 Spacer(minLength: 8)
                                 Text(message.sender)
                                     .font(.caption)

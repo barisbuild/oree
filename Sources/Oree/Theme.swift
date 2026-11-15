@@ -15,7 +15,7 @@ enum Theme {
     static let panel = ink.opacity(0.07)
     /// A fine dark edge round each card in light mode, where pale glass on a
     /// pale ground would otherwise lose its outline; none in dark mode.
-    static let cardEdge = adaptive(light: NSColor.black.withAlphaComponent(0.09), dark: .clear)
+    static let cardEdge = adaptive(light: NSColor.black.withAlphaComponent(0.16), dark: .clear)
     static let hairline = ink.opacity(0.1)
     static let primary = ink.opacity(0.92)
     static let secondary = ink.opacity(0.55)

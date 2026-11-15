@@ -238,35 +238,40 @@ struct CalendarWidget: View {
         let calendar = Calendar.current
         let days = CalendarFeed.fortnight
         let letters = days.prefix(7).map { calendar.veryShortWeekdaySymbols[calendar.component(.weekday, from: $0) - 1] }
-        return Grid(horizontalSpacing: 0, verticalSpacing: 3) {
-            GridRow {
-                ForEach(Array(letters.enumerated()), id: \.offset) { _, letter in
-                    Text(letter)
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(Theme.secondary)
-                        .frame(maxWidth: .infinity)
-                }
-            }
-            ForEach(0..<2, id: \.self) { week in
-                GridRow {
-                    ForEach(days[(week * 7)..<(week * 7 + 7)], id: \.self) { day in
-                        let today = calendar.isDateInToday(day)
-                        let past = day < calendar.startOfDay(for: Date())
-                        Text("\(calendar.component(.day, from: day))")
-                            .font(.caption.weight(today ? .semibold : .regular))
-                            .monospacedDigit()
-                            .foregroundStyle(today ? Theme.accent : past ? Theme.secondary : Theme.primary)
-                            .frame(width: 24, height: 19)
-                            .overlay {
-                                if today {
-                                    Capsule().strokeBorder(Theme.accent, style: StrokeStyle(lineWidth: 1.2, dash: [2.5, 2]))
-                                }
-                            }
-                            .frame(maxWidth: .infinity)
-                    }
+        // Fixed columns spread edge to edge, drawn a little past the card's
+        // padding so the first letter lines up with the title's icon.
+        func row<Cell: View>(_ cells: [Cell]) -> some View {
+            HStack(spacing: 0) {
+                ForEach(cells.indices, id: \.self) { index in
+                    if index > 0 { Spacer(minLength: 0) }
+                    cells[index].frame(width: 24)
                 }
             }
         }
+        return VStack(spacing: 3) {
+            row(letters.map { letter in
+                Text(letter)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(Theme.secondary)
+            })
+            ForEach(0..<2, id: \.self) { week in
+                row(days[(week * 7)..<(week * 7 + 7)].map { day in
+                    let today = calendar.isDateInToday(day)
+                    let past = day < calendar.startOfDay(for: Date())
+                    return Text("\(calendar.component(.day, from: day))")
+                        .font(.caption.weight(today ? .semibold : .regular))
+                        .monospacedDigit()
+                        .foregroundStyle(today ? Theme.accent : past ? Theme.secondary : Theme.primary)
+                        .frame(width: 24, height: 19)
+                        .overlay {
+                            if today {
+                                Capsule().strokeBorder(Theme.accent, style: StrokeStyle(lineWidth: 1.2, dash: [2.5, 2]))
+                            }
+                        }
+                })
+            }
+        }
+        .padding(.horizontal, -6)
     }
 
     /// "14:30", "All day", and "Tomorrow" in front of either when it is.
