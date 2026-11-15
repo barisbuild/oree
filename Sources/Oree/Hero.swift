@@ -8,6 +8,9 @@ import SwiftUI
 /// edge, so picture and dashboard read as one surface.
 struct HeroView: View {
     let imageURL: URL?
+    /// The whole screen rather than the top of it: the picture runs to
+    /// the edges with no fade, and the cards sit on it as glass.
+    var fills = false
     @State private var rendered: CGImage?
     @Environment(\.colorScheme) private var scheme
 
@@ -23,14 +26,15 @@ struct HeroView: View {
                         .resizable()
                 }
             }
-            .task(id: RenderKey(url: imageURL, size: geometry.size, dark: scheme == .dark)) {
+            .task(id: RenderKey(url: imageURL, size: geometry.size, dark: scheme == .dark, fills: fills)) {
                 let columns = Int(geometry.size.width / Self.cell)
                 let rows = Int(geometry.size.height / Self.cell)
                 let url = imageURL
                 let dark = scheme == .dark
+                let fade = !fills
                 rendered = await Task.detached(priority: .userInitiated) {
                     guard let url, let source = Dither.load(url) else { return nil }
-                    return Dither.render(source, columns: columns, rows: rows, dark: dark)
+                    return Dither.render(source, columns: columns, rows: rows, dark: dark, fade: fade)
                 }.value
             }
         }
@@ -40,6 +44,7 @@ struct HeroView: View {
         let url: URL?
         let size: CGSize
         let dark: Bool
+        let fills: Bool
     }
 }
 
@@ -85,7 +90,9 @@ enum Dither {
     }
 
     /// One pixel per dot; the view scales it up with hard edges.
-    static func render(_ source: CGImage, columns: Int, rows: Int, dark: Bool) -> CGImage? {
+    /// `fade` sinks the foot of the picture into the ground; without it the
+    /// picture keeps its full strength to every edge.
+    static func render(_ source: CGImage, columns: Int, rows: Int, dark: Bool, fade: Bool = true) -> CGImage? {
         guard columns > 0, rows > 0,
               let context = CGContext(
                   data: nil,
@@ -126,7 +133,7 @@ enum Dither {
                 let level = down + 0.03 * sin(across * 8.5) + 0.018 * sin(across * 21 + 1.7)
                 // How far the dots have thinned, easing in so the first ones
                 // to go are barely missed.
-                let dissolve = pow(smooth(dissolveStart, 1, level), 1.35)
+                let dissolve = fade ? pow(smooth(dissolveStart, 1, level), 1.35) : 0
                 guard dissolve < limit else {
                     // Gone: whatever lies behind the picture shows through.
                     pixels[offset] = 0
@@ -146,7 +153,7 @@ enum Dither {
                 colour *= 1 + (stepped / light - 1) * grain
                 // The vignette: deeper toward the foot and the lower corners.
                 let side = abs(across - 0.5) * 2
-                let shade = min(1, smooth(shadeStart, 1.08, level) * 0.9 + side * side * 0.25 * down)
+                let shade = fade ? min(1, smooth(shadeStart, 1.08, level) * 0.9 + side * side * 0.25 * down) : 0
                 colour += (ground - colour) * shade
                 pixels[offset] = UInt8(max(0, min(255, colour.x * 255)))
                 pixels[offset + 1] = UInt8(max(0, min(255, colour.y * 255)))

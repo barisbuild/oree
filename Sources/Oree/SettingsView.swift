@@ -287,8 +287,7 @@ private struct GeneralPage: View {
             Row(
                 title: preferences.wallpaperPath.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "System wallpaper",
                 detail: preferences.wallpaperPath == nil ? "Follows whatever your Mac's wallpaper is." : "Chosen by you.",
-                icon: .image,
-                isLast: true
+                icon: .image
             ) {
                 HStack {
                     if preferences.wallpaperPath != nil {
@@ -296,6 +295,21 @@ private struct GeneralPage: View {
                     }
                     Button("Choose…", action: preferences.chooseWallpaper)
                 }
+            }
+            Row(
+                title: "Size",
+                detail: preferences.pictureFills
+                    ? "The whole screen, with the widgets as glass over it."
+                    : "Across the top, fading into the desktop.",
+                isLast: true
+            ) {
+                Picker("", selection: $preferences.pictureFills) {
+                    Text("At the top").tag(false)
+                    Text("Full screen").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
             }
         }
     }

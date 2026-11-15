@@ -46,8 +46,8 @@ struct HomeView: View {
             let heroHeight = geometry.size.height * heroShare
             // The picture stays where it is whatever is in front of it.
             ZStack(alignment: .top) {
-                HeroView(imageURL: preferences.wallpaperURL)
-                    .frame(height: heroHeight)
+                HeroView(imageURL: preferences.wallpaperURL, fills: preferences.pictureFills)
+                    .frame(height: preferences.pictureFills ? geometry.size.height : heroHeight)
 
                 VStack(spacing: 28) {
                     Composer(store: store, picked: picked, open: open)

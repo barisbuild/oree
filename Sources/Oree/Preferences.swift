@@ -26,6 +26,8 @@ final class Preferences {
     /// Agents act without asking first. Off unless the user has turned it on
     /// and accepted that Oree is not responsible for what follows.
     var bypassPermissions: Bool { didSet { defaults.set(bypassPermissions, forKey: "bypassPermissions") } }
+    /// The picture fills the whole screen instead of the top of it.
+    var pictureFills: Bool { didSet { defaults.set(pictureFills, forKey: "pictureFills") } }
     /// The chosen picture; nil follows the system's own wallpaper.
     var wallpaperPath: String? { didSet { defaults.set(wallpaperPath, forKey: "wallpaperPath") } }
 
@@ -42,6 +44,7 @@ final class Preferences {
         wallpaperPath = defaults.string(forKey: "wallpaperPath")
         stacks = defaults.bool(forKey: "stacks")
         bypassPermissions = defaults.bool(forKey: "bypassPermissions")
+        pictureFills = defaults.bool(forKey: "pictureFills")
         if let saved = defaults.stringArray(forKey: "pinned") {
             pinned = saved.map { URL(fileURLWithPath: $0) }
         } else {
