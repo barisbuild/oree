@@ -100,33 +100,6 @@ h2 span { color: var(--blue); }
   overflow: visible;
 }
 
-/* ---- The words: centred, arriving in turn */
-
-.sw-lead {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: 22px;
-  padding: 0 20px 4vh;
-  text-align: center;
-  pointer-events: none;
-}
-.sw-lead > * { pointer-events: auto; }
-.sw-lead[inert] > * { pointer-events: none; }
-.sw-lead h1 { font-size: clamp(40px, 5.8vw, 82px); line-height: 0.98; }
-.sw-lead h1 .sw-rv { white-space: nowrap; }
-.sw-lead p { max-width: 560px; color: var(--soft); font-size: clamp(16px, 1.35vw, 19px); text-wrap: balance; }
-.sw-lead .button { margin-top: 4px; }
-/* While the story plays the button would only be swept away; it shows
-   where there is no story (narrow screens, reduced motion). */
-.sw-lead .button.sw-rv { display: none; }
-
-.sw-rv { display: inline-block; opacity: 0; transform: translateY(18px); filter: blur(10px); transition: opacity 0.7s var(--out), transform 0.85s var(--out), filter 0.7s var(--out); transition-delay: calc(var(--d, 0) * 80ms); }
-.sw-scene.on .sw-rv { opacity: 1; transform: none; filter: none; }
-
 /* ---- The clutter: files left lying on the desktop */
 
 .sw-items { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
@@ -136,8 +109,8 @@ h2 span { color: var(--blue); }
 .sw-item > .icon {
   opacity: 0;
   scale: 0.6;
-  transition: opacity 0.7s var(--out), scale 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
-  transition-delay: calc(200ms + var(--n) * 40ms);
+  transition: opacity 0.5s var(--out), scale 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition-delay: calc(var(--n) * 25ms);
   animation: sw-drift var(--dur) ease-in-out var(--delay) infinite alternate;
 }
 .sw-scene.on .sw-item > .icon { opacity: 1; scale: 1; }
@@ -153,19 +126,6 @@ h2 span { color: var(--blue); }
 .icon.note b::before { width: 34px; height: 40px; border-radius: 5px; background: repeating-linear-gradient(#fff 0 7px, #e8e8ee 7px 8px), #fff; box-shadow: 0 0 0 1px rgb(16 16 30 / 0.1) inset; }
 .icon.eml b::before { width: 42px; height: 30px; border-radius: 5px; background: linear-gradient(160deg, #6fc3ff, #2f7bf6); clip-path: polygon(0 0, 50% 55%, 100% 0, 100% 100%, 0 100%); }
 .icon.mp3 b::before { width: 40px; height: 40px; border-radius: 9px; background: radial-gradient(circle at 30% 30%, #9db0ff, #2f3bd9 60%, #14186b); }
-
-/* ---- The selection rectangle and the pointer that draws it */
-
-.sw-rect { position: absolute; left: 0; top: 0; z-index: 4; width: 0; height: 0; border: 1px solid rgb(47 59 217 / 0.6); border-radius: 3px; background: rgb(47 59 217 / 0.08); opacity: 0; pointer-events: none; will-change: transform, width, height; }
-
-.sw-cursor { position: absolute; left: 0; top: 0; z-index: 6; opacity: 0; pointer-events: none; will-change: transform; }
-/* It arrives once, after the words; after that scrolling alone sets it. */
-.sw-scene.on .sw-cursor { opacity: var(--seen, 1); animation: sw-in 0.5s var(--out) 0.35s backwards; }
-@keyframes sw-in { from { opacity: 0; } }
-/* Before the first sweep it waits, the way a hand on a mouse fidgets. */
-.sw-cursor > i { display: block; width: 18px; height: 26px; background: #101014; clip-path: polygon(0 0, 0 78%, 26% 60%, 46% 100%, 62% 92%, 43% 55%, 76% 55%); filter: drop-shadow(0 0 1.2px #fff) drop-shadow(0 2px 3px rgb(0 0 0 / 0.25)); animation: sw-fidget 3.2s ease-in-out infinite; }
-.sw-scene.moving .sw-cursor > i { animation: none; }
-@keyframes sw-fidget { 0%, 100% { transform: translate(0, 0); } 30% { transform: translate(5px, 3px); } 60% { transform: translate(-3px, 6px); } }
 
 /* ---- The desktop the clutter becomes. 1em inside it is 1% of its width. */
 
@@ -206,9 +166,7 @@ h2 span { color: var(--blue); }
 .sw-cards { position: absolute; inset: 60% 17% auto; z-index: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8em; }
 .sw-cards .w { font-size: 0.86em; opacity: 0; will-change: transform, opacity; }
 
-/* ---- Once the story is told: the last word, then the words that stay. */
-.sw-scene.said .sw-cards, .sw-scene.said .sw-box { opacity: 0.12 !important; filter: blur(3px); }
-.sw-cards, .sw-box { transition: opacity 0.5s, filter 0.5s; }
+/* ---- Once the story is told, the words that stay. */
 
 .sw-end {
   position: absolute; left: 0; right: 0; top: 8%; z-index: 5;
@@ -216,7 +174,7 @@ h2 span { color: var(--blue); }
   opacity: 0; transform: translateY(16px); visibility: hidden;
   transition: opacity 0.7s var(--out), transform 0.8s var(--out), visibility 0s 0.8s;
 }
-.sw-scene.full:not(.said) .sw-end { opacity: 1; transform: none; visibility: visible; transition-delay: 0.15s; transition-property: opacity, transform, visibility; transition-duration: 0.7s, 0.8s, 0s; }
+.sw-scene.full .sw-end { opacity: 1; transform: none; visibility: visible; transition-delay: 0.15s; transition-property: opacity, transform, visibility; transition-duration: 0.7s, 0.8s, 0s; }
 .sw-end-title { font-size: clamp(36px, 4.6vw, 64px); font-weight: 500; line-height: 1; letter-spacing: -0.045em; text-shadow: 0 2px 24px rgb(0 10 60 / 0.35); }
 .sw-end-line { font-size: clamp(15px, 1.2vw, 18px); opacity: 0.9; text-shadow: 0 1px 10px rgb(0 10 60 / 0.4); }
 .sw-end-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 8px; }
@@ -228,11 +186,7 @@ h2 span { color: var(--blue); }
 .badge:hover { background: rgb(14 20 60 / 0.56); }
 .badge svg { width: 18px; height: 18px; }
 
-/* ---- The last word */
 
-.sw-close { position: absolute; inset: 0; z-index: 7; display: grid; place-content: center; padding: 0 20px; text-align: center; font-size: clamp(40px, 7vw, 104px); font-weight: 500; line-height: 1; letter-spacing: -0.05em; color: var(--ink); text-shadow: 0 0 40px #fff, 0 0 14px #fff; opacity: 0; transform: translateY(24px); filter: blur(8px); transition: opacity 0.5s var(--out), transform 0.6s var(--out), filter 0.5s; pointer-events: none; }
-.sw-scene.said .sw-close { opacity: 1; transform: none; filter: none; }
-.sw-close span { color: var(--blue); }
 
 
 /* ---- A widget. Everything inside is in ems, so it scales with its font. */
@@ -494,12 +448,12 @@ footer a:hover { color: var(--ink); }
 @media (max-width: 860px) {
   .sw { height: auto; }
   .sw-scene { position: static; height: auto; display: grid; gap: 28px; padding: 44px 0 12px; overflow: visible; }
-  .sw-lead { position: static; padding: 0 20px; }
-  .sw-lead .button.sw-rv { display: inline-flex; }
-  .sw-end { display: none; }
+  .sw-end { position: static; order: -1; padding: 0 20px; color: var(--ink); opacity: 1; transform: none; visibility: visible; }
+  .sw-end-title, .sw-end-line { text-shadow: none; }
+  .sw-end-line { color: var(--soft); }
+  .sw-end .badge { color: var(--ink); border-color: var(--line); background: var(--panel); }
   .sw { height: auto; }
-  .sw-lead { order: -1; }
-  .sw-items, .sw-rect, .sw-cursor, .sw-close { display: none; }
+  .sw-items { display: none; }
   .sw-desk { --frame: 1; --photo: 1; position: relative; left: auto; top: auto; width: calc(100% - 24px); height: auto; border-radius: 14px; padding: 170px 10px 10px; margin: 0 auto; transform: none; }
   .sw-desk > * { font-size: 10.5px; }
   .sw-photo { height: 240px; border-radius: 14px 14px 0 0; }
@@ -530,15 +484,15 @@ footer a:hover { color: var(--ink); }
   html { scroll-behavior: auto; }
   .sw { height: auto; }
   .sw-scene { position: static; height: auto; display: grid; gap: 32px; padding: 44px 0 24px; overflow: visible; }
-  .sw-lead { position: static; }
-  .sw-lead .button.sw-rv { display: inline-flex; }
-  .sw-end { display: none; }
+  .sw-end { position: static; order: -1; padding: 0 20px; color: var(--ink); opacity: 1; transform: none; visibility: visible; }
+  .sw-end-title, .sw-end-line { text-shadow: none; }
+  .sw-end-line { color: var(--soft); }
+  .sw-end .badge { color: var(--ink); border-color: var(--line); background: var(--panel); }
   .sw { height: auto; }
-  .sw-lead { order: -1; }
-  .sw-items, .sw-rect, .sw-cursor, .sw-close { display: none; }
+  .sw-items { display: none; }
   .sw-desk { --frame: 1; --photo: 1; position: relative; left: auto; top: auto; margin: 0 auto; transform: none; }
   .sw-box, .sw-cards .w { opacity: 1; }
-  .sw-rv, .sw-item > .icon { transition: none; }
+  .sw-item > .icon { transition: none; }
   [data-reveal] { opacity: 1; transform: none; filter: none; transition: none; }
   .ring.charging svg, .reply b, .prompt b, .thread .ask b { animation: none; }
   .ring.charging svg:last-child { opacity: 0; }

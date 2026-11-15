@@ -130,23 +130,18 @@ function turnWheel() {
 
 drawIcons();
 
-// ---- The hero: a cursor sweeps the clutter of a desktop into Oree.
-// Each moving part's place is worked out from how far the page has
-// played, `p`, from 0 to 1 over SWEEP_LENGTH and REST_LENGTH:
-//   0.06–0.32  the heroPointer drags a rectangle across the strewn; the words go
-//   0.36–0.46  what it picked gathers, a small pile for each widget
+// ---- The hero: the clutter of a desktop gathers into Oree.
+// Each moving part's place is worked out from how far the story has
+// played, `p`, from 0.36 to END over PLAY_LENGTH:
+//   0.36–0.46  the files gather, a small pile for each widget
 //   0.44–0.72  each pile opens into its widget, one after another
 //   0.50–0.62  the task box arrives
 //   0.60–0.74  the picture prints in, the screen forms round it all
-// Then the desktop fills the window, the last word over it for a moment.
+// Then the words that stay come in over the sky.
 
-const section = $("[data-sw]");
 const scene = $("[data-scene]");
-const lead = $("[data-lead]");
 const desk = $("[data-desk]");
 const box = $("[data-box]");
-const rect = $("[data-rect]");
-const cursor = $("[data-cursor]");
 const deck = $("[data-cards]");
 const heroPicture = $("[data-hero-picture]");
 
@@ -204,22 +199,6 @@ function measure() {
   });
 }
 
-/** Where the heroPointer is at `p`, and the corner it is dragging from, if any. */
-function heroPointer(p) {
-  const A = { x: 0.05 * size.w, y: 0.07 * size.h };
-  const B = { x: 0.96 * size.w, y: 0.93 * size.h };
-  // A hand does not drag in a straight line: a slight bow.
-  const along = (from, to, t, bow) => ({
-    x: mix(from.x, to.x, t) + Math.sin(t * Math.PI) * bow,
-    y: mix(from.y, to.y, t) - Math.sin(t * Math.PI) * bow * 0.6,
-  });
-  if (p < 0.06) return { at: A };
-  if (p < 0.32) return { at: along(A, B, ease(span(p, 0.06, 0.32)), 40), from: A };
-  if (p < 0.36) return { at: B, from: A, letGo: span(p, 0.32, 0.36) };
-  return { at: B };
-}
-
-const inside = (point, area) => point.x >= area.x && point.x <= area.x + area.w && point.y >= area.y && point.y <= area.y + area.h;
 let heroPrinted = false;
 
 let queued = false;
@@ -242,28 +221,6 @@ function tell() {
   }
   const p = heroP;
 
-  // The words make way as the rectangle reaches them.
-  const gone = ease(span(p, 0.2, 0.32));
-  lead.style.opacity = (1 - gone).toFixed(3);
-  lead.style.transform = `translateY(${(-40 * gone).toFixed(1)}px)`;
-  lead.toggleAttribute("inert", gone > 0.5);
-
-  // The heroPointer, and the rectangle it draws.
-  const { at, from, letGo = 0 } = heroPointer(p);
-  cursor.style.transform = `translate(${at.x.toFixed(1)}px, ${at.y.toFixed(1)}px)`;
-  cursor.style.setProperty("--seen", (1 - ease(span(p, 0.36, 0.42))).toFixed(3));
-  scene.classList.toggle("moving", p > 0.06);
-  let area = null;
-  if (from) {
-    area = { x: Math.min(from.x, at.x), y: Math.min(from.y, at.y), w: Math.abs(at.x - from.x), h: Math.abs(at.y - from.y) };
-    rect.style.transform = `translate(${area.x.toFixed(1)}px, ${area.y.toFixed(1)}px)`;
-    rect.style.width = `${area.w.toFixed(1)}px`;
-    rect.style.height = `${area.h.toFixed(1)}px`;
-    rect.style.opacity = (1 - letGo).toFixed(3);
-  } else {
-    rect.style.opacity = 0;
-  }
-
   // Each widget opens out of its pile, one after another.
   const opened = cards.map((_, index) => span(p, 0.44 + index * 0.022, 0.56 + index * 0.022));
   const gather = ease(span(p, 0.36, 0.46));
@@ -279,9 +236,6 @@ function tell() {
     const turn = gather * (file.layer % 2 ? 5 : -4) * (1 - open);
     file.element.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -50%) rotate(${turn.toFixed(2)}deg) scale(${(1 - 0.2 * gather - 0.5 * ease(open)).toFixed(3)})`;
     file.element.style.opacity = (1 - ease(span(open, 0.15, 0.55))).toFixed(3);
-    // Picked while the first rectangle covers it, and until it is folded away.
-    const picked = p >= 0.32 ? open < 0.5 : Boolean(area && inside(lies, area));
-    file.icon.classList.toggle("picked", picked);
   }
 
   cards.forEach((element, index) => {
@@ -317,13 +271,12 @@ function queueTell() {
 }
 addEventListener("scroll", turnWheel, { passive: true });
 
-// The story plays once, from a moment after the page appears.
-const PLAY_DELAY = 300;
-// The sweep (p 0 to 0.36), then the widgets and the picture (to END).
-const SWEEP_LENGTH = 2000;
-const REST_LENGTH = 4300;
+// The story plays once, as soon as the page is ready: the clutter is
+// seen for a moment, then gathers into the widgets and the picture.
+const PLAY_DELAY = 450;
+const PLAY_LENGTH = 3400;
 const END = 0.74;
-let heroP = 0;
+let heroP = 0.36;
 function play() {
   let started = null;
   let last = null;
@@ -333,16 +286,14 @@ function play() {
     last = now;
     started ??= now;
     const elapsed = Math.max(0, now - started - PLAY_DELAY);
-    heroP = elapsed < SWEEP_LENGTH ? 0.36 * elapsed / SWEEP_LENGTH : 0.36 + (END - 0.36) * clamp((elapsed - SWEEP_LENGTH) / REST_LENGTH);
+    heroP = 0.36 + (END - 0.36) * clamp(elapsed / PLAY_LENGTH);
     tell();
     if (heroP < END) {
       requestAnimationFrame(frame);
       return;
     }
-    // Once the last widget is in place the desktop takes the screen, with
-    // the last word over it for a moment.
-    scene.classList.add("full", "said");
-    setTimeout(() => scene.classList.remove("said"), 1300);
+    // Once the last widget is in place, the words come in.
+    scene.classList.add("full");
   };
   requestAnimationFrame(frame);
 }
