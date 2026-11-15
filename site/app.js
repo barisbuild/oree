@@ -90,7 +90,6 @@ function card(widget, index) {
   return element;
 }
 
-$("[data-grid]").append(...widgets.map(card));
 
 // ---- Widgets on a curve, turned by scrolling
 
@@ -127,47 +126,199 @@ function turnWheel() {
 
 drawIcons();
 
-// ---- The hero: the parts arrive in turn, then scrolling tells the story
+// ---- The hero: a cursor sweeps the clutter of a desktop into Oree.
+// Each moving part's place is worked out from how far the page has
+// scrolled, `p`, from 0 to 1:
+//   0.06–0.32  the heroPointer drags a rectangle across the strewn; the words go
+//   0.36–0.46  what it picked gathers, a small pile for each widget
+//   0.44–0.72  each pile opens into its widget, one after another
+//   0.50–0.62  the task box arrives
+//   0.60–0.70  a second sweep holds the widgets
+//   0.64–0.84  the picture prints in, the screen forms round it all
+//   0.86–0.96  the last word
 
-const hero = $("[data-hero]");
-const scene = $("[data-scene-root]");
-const lead = $(".lead");
-const mac = $(".mac");
-const asked = $("[data-ask]");
-const REQUEST = "Tidy my Downloads into folders by month";
-const PLACEHOLDER = asked.textContent;
+const section = $("[data-sw]");
+const scene = $("[data-scene]");
+const lead = $("[data-lead]");
+const desk = $("[data-desk]");
+const box = $("[data-box]");
+const rect = $("[data-rect]");
+const cursor = $("[data-cursor]");
+const closing = $("[data-close]");
+const deck = $("[data-cards]");
+const heroPicture = $("[data-hero-picture]");
 
-/** How big the screen ends, and how far up, when it has come to fill the view. */
+/** Ease out with a little overshoot, for things settling into place. */
+const settleInto = (t) => 1 + 2.2 * Math.pow(t - 1, 3) + 1.2 * Math.pow(t - 1, 2);
+const mix = (from, to, t) => from + (to - from) * t;
+
+deck.append(...widgets.map(card));
+const cards = [...deck.children];
+
+// Each file: its name, its kind, where it lies (% of the scene), and the
+// widget it is gathered into.
+const clutter = [
+  ["Notes.txt", "note", 29, 15, 2], ["Brand", "", 11, 23, 0], ["Harbour.jpg", "pic", 70, 12, 0],
+  ["Lunch.ics", "cal", 86, 21, 1], ["Screenshot.png", "pic", 8, 47, 0], ["Flight.ics", "cal", 92, 46, 1],
+  ["Invoices", "", 18, 66, 0], ["Tickets.eml", "eml", 79, 70, 3], ["To do.txt", "note", 26, 86, 2],
+  ["Low Tide.mp3", "mp3", 61, 86, 4], ["Groceries.txt", "note", 41, 89, 2], ["Invoice.eml", "eml", 90, 83, 3],
+];
+$("[data-items]").innerHTML = clutter.map(([name, kind], n) => {
+  const drift = (seed) => ((((n + 3) * seed) % 11) - 5).toFixed(1);
+  return `<div class="sw-item"><div class="icon ${kind}" style="--n:${n};--dur:${(7 + (n % 4) * 1.6).toFixed(1)}s;--delay:${(-n * 0.9).toFixed(1)}s;--dx:${drift(7)}px;--dy:${drift(5)}px;--tilt:${1 + (n % 3)}"><b></b><span>${name}</span></div></div>`;
+}).join("");
+const strewn = [...$("[data-items]").children].map((element, n) => ({
+  element,
+  icon: element.firstElementChild,
+  x: clutter[n][2] / 100,
+  y: clutter[n][3] / 100,
+  target: clutter[n][4],
+  // Its place in its pile, counted from the bottom.
+  layer: clutter.slice(0, n).filter((other) => other[4] === clutter[n][4]).length,
+}));
+
+// The widgets just made get their icons.
+drawIcons(deck);
+
+let size = { w: 1, h: 1 };
+let homes = [];
+let piles = [];
+let deckBox = { x: 0, y: 0, w: 0, h: 0 };
+
+/** Where things rest, in the scene's own pixels. */
 function measure() {
-  scene.style.setProperty("--lead-h", `${lead.offsetHeight}px`);
-  if (fixed()) return;
-  const width = mac.offsetWidth;
-  const room = scene.offsetHeight - 24 - 72;
-  const full = Math.min(1320, innerWidth - 32, room * 1.6);
-  scene.style.setProperty("--grow", Math.max(0, full / width - 1).toFixed(4));
-  scene.style.setProperty("--lift", `${16 - mac.offsetTop}px`);
+  for (const element of cards) element.style.transform = "none";
+  const sceneBox = scene.getBoundingClientRect();
+  size = { w: sceneBox.width, h: sceneBox.height };
+  homes = cards.map((element) => {
+    const at = element.getBoundingClientRect();
+    return { x: at.left - sceneBox.left + at.width / 2, y: at.top - sceneBox.top + at.height / 2 };
+  });
+  // Each pile forms between its strewn and the widget it will become.
+  piles = cards.map((_, index) => {
+    const own = strewn.filter((file) => file.target === index);
+    if (!own.length) return null;
+    const middle = own.reduce((sum, file) => ({ x: sum.x + file.x * size.w / own.length, y: sum.y + file.y * size.h / own.length }), { x: 0, y: 0 });
+    return { x: mix(middle.x, homes[index].x, 0.45), y: mix(middle.y, homes[index].y, 0.45) };
+  });
+  const all = deck.getBoundingClientRect();
+  deckBox = { x: all.left - sceneBox.left, y: all.top - sceneBox.top, w: all.width, h: all.height };
 }
+
+/** Where the heroPointer is at `p`, and the corner it is dragging from, if any. */
+function heroPointer(p) {
+  const A = { x: 0.05 * size.w, y: 0.07 * size.h };
+  const B = { x: 0.96 * size.w, y: 0.93 * size.h };
+  const C = { x: deckBox.x - 26, y: deckBox.y - 22 };
+  const D = { x: deckBox.x + deckBox.w + 26, y: deckBox.y + deckBox.h + 22 };
+  // A hand does not drag in a straight line: a slight bow.
+  const along = (from, to, t, bow) => ({
+    x: mix(from.x, to.x, t) + Math.sin(t * Math.PI) * bow,
+    y: mix(from.y, to.y, t) - Math.sin(t * Math.PI) * bow * 0.6,
+  });
+  if (p < 0.06) return { at: A };
+  if (p < 0.32) return { at: along(A, B, ease(span(p, 0.06, 0.32)), 40), from: A };
+  if (p < 0.36) return { at: B, from: A, letGo: span(p, 0.32, 0.36) };
+  if (p < 0.6) return { at: along(B, C, ease(span(p, 0.36, 0.6)), -60) };
+  if (p < 0.7) return { at: along(C, D, ease(span(p, 0.6, 0.7)), 24), from: C };
+  return { at: D, from: C, letGo: span(p, 0.7, 0.74) };
+}
+
+const inside = (point, area) => point.x >= area.x && point.x <= area.x + area.w && point.y >= area.y && point.y <= area.y + area.h;
+let heroPrinted = false;
 
 let queued = false;
 function tell() {
   queued = false;
   if (fixed()) {
-    for (const name of ["--g", "--t5", "--play"]) scene.style.removeProperty(name);
+    // No story: the finished desktop, as the stylesheet lays it out.
+    for (const element of [...cards, box]) {
+      element.style.transform = "";
+      element.style.opacity = "";
+    }
+    deck.style.opacity = "";
+    deck.style.filter = "";
+    if (!heroPrinted) {
+      heroPrinted = true;
+      print(heroPicture);
+    }
+    turnWheel();
     return;
   }
-  const p = clamp(scrollY / (hero.offsetHeight - innerHeight));
-  const typed = span(p, 0.36, 0.82);
-  scene.style.setProperty("--g", ease(span(p, 0, 0.3)).toFixed(4));
-  scene.style.setProperty("--t5", typed.toFixed(4));
-  const play = ease(span(p, 0.84, 0.97));
-  scene.style.setProperty("--play", play.toFixed(4));
-  scene.classList.toggle("inviting", play > 0.5);
-  lead.toggleAttribute("inert", p > 0.12);
+  const p = clamp(scrollY / (section.offsetHeight - innerHeight));
 
-  // The request is typed a letter at a time as the page moves.
-  const letters = Math.round(REQUEST.length * span(typed, 0.04, 0.4));
-  asked.textContent = letters ? REQUEST.slice(0, letters) : PLACEHOLDER;
-  asked.parentElement.classList.toggle("typed", letters > 0);
+  // The words make way as the rectangle reaches them.
+  const gone = ease(span(p, 0.2, 0.32));
+  lead.style.opacity = (1 - gone).toFixed(3);
+  lead.style.transform = `translateY(${(-40 * gone).toFixed(1)}px)`;
+  lead.toggleAttribute("inert", gone > 0.5);
+
+  // The heroPointer, and the rectangle it draws.
+  const { at, from, letGo = 0 } = heroPointer(p);
+  cursor.style.transform = `translate(${at.x.toFixed(1)}px, ${at.y.toFixed(1)}px)`;
+  cursor.style.setProperty("--seen", (1 - ease(span(p, 0.72, 0.78))).toFixed(3));
+  scene.classList.toggle("moving", p > 0.06);
+  let area = null;
+  if (from) {
+    area = { x: Math.min(from.x, at.x), y: Math.min(from.y, at.y), w: Math.abs(at.x - from.x), h: Math.abs(at.y - from.y) };
+    rect.style.transform = `translate(${area.x.toFixed(1)}px, ${area.y.toFixed(1)}px)`;
+    rect.style.width = `${area.w.toFixed(1)}px`;
+    rect.style.height = `${area.h.toFixed(1)}px`;
+    rect.style.opacity = (1 - letGo).toFixed(3);
+  } else {
+    rect.style.opacity = 0;
+  }
+
+  // Each widget opens out of its pile, one after another.
+  const opened = cards.map((_, index) => span(p, 0.44 + index * 0.022, 0.56 + index * 0.022));
+  const gather = ease(span(p, 0.36, 0.46));
+
+  for (const file of strewn) {
+    const lies = { x: file.x * size.w, y: file.y * size.h };
+    const pile = piles[file.target];
+    const open = opened[file.target];
+    // To its pile, stacked a little off true, then into the widget.
+    const stacked = { x: pile.x + file.layer * 3, y: pile.y - file.layer * 4 };
+    const x = mix(mix(lies.x, stacked.x, gather), homes[file.target].x, ease(open));
+    const y = mix(mix(lies.y, stacked.y, gather), homes[file.target].y, ease(open));
+    const turn = gather * (file.layer % 2 ? 5 : -4) * (1 - open);
+    file.element.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -50%) rotate(${turn.toFixed(2)}deg) scale(${(1 - 0.2 * gather - 0.5 * ease(open)).toFixed(3)})`;
+    file.element.style.opacity = (1 - ease(span(open, 0.15, 0.55))).toFixed(3);
+    // Picked while the first rectangle covers it, and until it is folded away.
+    const picked = p >= 0.32 ? open < 0.5 : Boolean(area && inside(lies, area));
+    file.icon.classList.toggle("picked", picked);
+  }
+
+  cards.forEach((element, index) => {
+    const k = settleInto(opened[index]);
+    const home = homes[index];
+    const start = piles[index] ?? { x: home.x, y: home.y + 60 };
+    const scale = piles[index] ? mix(0.16, 1, k) : mix(0.9, 1, k);
+    element.style.transform = `translate(${((start.x - home.x) * (1 - k)).toFixed(1)}px, ${((start.y - home.y) * (1 - k)).toFixed(1)}px) scale(${scale.toFixed(3)})`;
+    element.style.opacity = clamp(opened[index] * 2.4).toFixed(3);
+    // The second sweep: what its rectangle touches is held, outlined.
+    const held = p >= 0.6 && p < 0.74 && area && inside(home, area);
+    element.classList.toggle("swept", Boolean(held));
+  });
+
+  // The task box, the picture, the screen round it all, the last word.
+  const boxIn = settleInto(span(p, 0.5, 0.62));
+  const last = ease(span(p, 0.86, 0.96));
+  box.style.opacity = (clamp(boxIn) * (1 - last * 0.88)).toFixed(3);
+  box.style.transform = `translateY(${((1 - boxIn) * 18).toFixed(1)}px)`;
+  deck.style.opacity = (1 - last * 0.88).toFixed(3);
+  deck.style.filter = `blur(${(last * 3).toFixed(2)}px)`;
+  desk.style.setProperty("--photo", ease(span(p, 0.64, 0.78)).toFixed(3));
+  desk.style.setProperty("--frame", ease(span(p, 0.7, 0.84)).toFixed(3));
+  closing.style.opacity = last.toFixed(3);
+  closing.style.transform = `translateY(${((1 - last) * 24).toFixed(1)}px)`;
+  closing.style.filter = `blur(${((1 - last) * 8).toFixed(2)}px)`;
+
+  // The picture is heroPrinted into focus as it appears, once.
+  if (p > 0.62 && !heroPrinted) {
+    heroPrinted = true;
+    resolve(heroPicture);
+  }
   turnWheel();
 }
 function queueTell() {
@@ -333,25 +484,19 @@ const photoReady = new Promise((done) => {
   loading.onerror = done;
 });
 loading.src = "hero.jpg";
-Promise.all([photoReady, document.fonts?.ready]).then(async () => {
+Promise.all([photoReady, document.fonts?.ready]).then(() => {
   measure();
-  tell();
   printAll();
-  const heroPicture = $("[data-hero-picture]");
-  const blank = heroPicture.getContext("2d");
-  blank.clearRect(0, 0, heroPicture.width, heroPicture.height);
+  heroPrinted = fixed();
+  tell();
   requestAnimationFrame(() => scene.classList.add("on"));
-  await wait(still ? 0 : 650);
-  resolve(heroPicture);
 });
 
 for (const button of $$("[data-look]")) {
   button.addEventListener("click", () => {
     look = button.dataset.look;
     for (const other of $$("[data-look]")) other.setAttribute("aria-pressed", String(other.dataset.look === look));
-    const heroPicture = $("[data-hero-picture]");
-    pictures.filter((canvas) => canvas !== plate && canvas !== heroPicture).forEach((canvas) => print(canvas));
-    resolve(heroPicture);
+    pictures.filter((canvas) => canvas !== plate).forEach((canvas) => print(canvas));
     resolve(plate);
   });
 }

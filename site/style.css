@@ -86,131 +86,130 @@ h2 { font-size: clamp(32px, 4.8vw, 60px); line-height: 1.04; }
 h2 span { color: var(--faint); }
 .eyebrow { font: 500 12.5px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--blue); }
 
-/* ---- Hero. On load the parts arrive one after another (.rv, in order of
-   --d). As the page scrolls, --g brings the desktop up to fill the view and
-   --t5 types a request and answers it. --play shows the invitation. */
+/* ---- Hero: a cursor sweeps the clutter of a desktop into Oree. The script
+   sets each moving part's place from how far the page has scrolled; this
+   keeps only looks, the arrivals on load and the idle drift. */
 
-.hero { position: relative; height: 330vh; }
+.sw { position: relative; height: 520vh; }
 
-.scene {
-  --g: 0; --t5: 0; --play: 0;
+.sw-scene {
   position: sticky;
   top: 64px;
   height: calc(100vh - 64px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   overflow: clip;
 }
 
-/* Arrivals: each part rises out of a blur, in turn. */
-.rv { display: inline-block; opacity: 0; transform: translateY(18px); filter: blur(10px); transition: opacity 0.9s var(--out), transform 1.1s var(--out), filter 0.9s var(--out); transition-delay: calc(var(--d, 0) * 110ms); }
-.scene.on .rv { opacity: 1; transform: none; filter: none; }
+/* ---- The words: centred, arriving in turn */
 
-.lead {
-  flex: none;
+.sw-lead {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
   display: grid;
+  place-content: center;
   justify-items: center;
   gap: 22px;
-  width: var(--page);
-  padding: clamp(28px, 7vh, 80px) 0 clamp(28px, 6vh, 64px);
+  padding: 0 20px 4vh;
   text-align: center;
-  opacity: calc(1 - var(--g) * 2.4);
-  transform: translateY(calc(var(--g) * -50px));
+  pointer-events: none;
 }
-.lead h1 { font-size: clamp(44px, 7vw, 96px); line-height: 0.98; }
-.lead h1 .rv { white-space: nowrap; }
-.lead p { max-width: 580px; color: var(--soft); font-size: clamp(16px, 1.35vw, 19px); text-wrap: balance; }
-.lead .button { margin-top: 4px; }
-.lead .button.rv { display: inline-flex; }
+.sw-lead > * { pointer-events: auto; }
+.sw-lead[inert] > * { pointer-events: none; }
+.sw-lead h1 { font-size: clamp(44px, 7vw, 96px); line-height: 0.98; }
+.sw-lead h1 .sw-rv { white-space: nowrap; }
+.sw-lead p { max-width: 560px; color: var(--soft); font-size: clamp(16px, 1.35vw, 19px); text-wrap: balance; }
+.sw-lead .button { margin-top: 4px; }
 
-/* ---- The Mac's screen. Everything inside is sized from its width: 1em is
-   1% of it. At rest it sits under the words; --grow and --lift, worked out
-   by the script, are how much larger and how far up it ends. */
+.sw-rv { display: inline-block; opacity: 0; transform: translateY(18px); filter: blur(10px); transition: opacity 0.9s var(--out), transform 1.1s var(--out), filter 0.9s var(--out); transition-delay: calc(var(--d, 0) * 110ms); }
+.sw-lead .button.sw-rv { display: inline-flex; }
+.sw-scene.on .sw-rv { opacity: 1; transform: none; filter: none; }
 
-.mac {
-  position: relative;
-  flex: none;
-  width: min(1040px, 100vw - 96px, (100vh - 64px - var(--lead-h, 330px) - 24px) * 1.6);
+/* ---- The clutter: files left lying on the desktop */
+
+.sw-items { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.sw-item { position: absolute; left: 0; top: 0; will-change: transform, opacity; }
+/* Arrival on load, then a slow drift of its own: the page breathes before
+   anyone scrolls. */
+.sw-item > .icon {
+  opacity: 0;
+  scale: 0.6;
+  transition: opacity 0.7s var(--out), scale 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition-delay: calc(500ms + var(--n) * 55ms);
+  animation: sw-drift var(--dur) ease-in-out var(--delay) infinite alternate;
+}
+.sw-scene.on .sw-item > .icon { opacity: 1; scale: 1; }
+@keyframes sw-drift {
+  from { transform: translate(0, 0) rotate(calc(var(--tilt) * -1deg)); }
+  to { transform: translate(var(--dx), var(--dy)) rotate(calc(var(--tilt) * 1deg)); }
+}
+.sw-item .icon span { color: var(--ink); }
+.sw-item .icon.picked span { color: #fff; }
+
+/* A few kinds the main page does not draw. */
+.icon.cal b::before { width: 36px; height: 38px; border-radius: 8px; background: linear-gradient(#ff5a4f 0 30%, #fff 30%); box-shadow: 0 0 0 1px rgb(16 16 30 / 0.08) inset; }
+.icon.note b::before { width: 34px; height: 40px; border-radius: 5px; background: repeating-linear-gradient(#fff 0 7px, #e8e8ee 7px 8px), #fff; box-shadow: 0 0 0 1px rgb(16 16 30 / 0.1) inset; }
+.icon.eml b::before { width: 42px; height: 30px; border-radius: 5px; background: linear-gradient(160deg, #6fc3ff, #2f7bf6); clip-path: polygon(0 0, 50% 55%, 100% 0, 100% 100%, 0 100%); }
+.icon.mp3 b::before { width: 40px; height: 40px; border-radius: 9px; background: radial-gradient(circle at 30% 30%, #9db0ff, #2f3bd9 60%, #14186b); }
+
+/* ---- The selection rectangle and the pointer that draws it */
+
+.sw-rect { position: absolute; left: 0; top: 0; z-index: 4; width: 0; height: 0; border: 1px solid rgb(47 59 217 / 0.6); border-radius: 3px; background: rgb(47 59 217 / 0.08); opacity: 0; pointer-events: none; will-change: transform, width, height; }
+
+.sw-cursor { position: absolute; left: 0; top: 0; z-index: 6; opacity: 0; pointer-events: none; will-change: transform; }
+/* It arrives once, after the words; after that scrolling alone sets it. */
+.sw-scene.on .sw-cursor { opacity: var(--seen, 1); animation: sw-in 0.6s var(--out) 1.2s backwards; }
+@keyframes sw-in { from { opacity: 0; } }
+/* Before the first sweep it waits, the way a hand on a mouse fidgets. */
+.sw-cursor > i { display: block; width: 18px; height: 26px; background: #101014; clip-path: polygon(0 0, 0 78%, 26% 60%, 46% 100%, 62% 92%, 43% 55%, 76% 55%); filter: drop-shadow(0 0 1.2px #fff) drop-shadow(0 2px 3px rgb(0 0 0 / 0.25)); animation: sw-fidget 3.2s ease-in-out infinite; }
+.sw-scene.moving .sw-cursor > i { animation: none; }
+@keyframes sw-fidget { 0%, 100% { transform: translate(0, 0); } 30% { transform: translate(5px, 3px); } 60% { transform: translate(-3px, 6px); } }
+
+/* ---- The desktop the clutter becomes. 1em inside it is 1% of its width. */
+
+.sw-desk {
+  --frame: 0;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(1120px, 100vw - 64px, (100vh - 64px - 40px) * 1.6);
   aspect-ratio: 16 / 10;
   container-type: inline-size;
   border-radius: 14px;
-  background: var(--app);
-  box-shadow: 0 0 0 1px rgb(16 16 30 / 0.1), 0 50px 100px -30px rgb(20 20 60 / 0.35), 0 12px 30px rgb(20 20 60 / 0.08);
-  overflow: hidden;
+  background: rgb(243 243 246 / var(--frame));
+  box-shadow: 0 0 0 1px rgb(16 16 30 / calc(var(--frame) * 0.1)), 0 50px 100px -30px rgb(20 20 60 / calc(var(--frame) * 0.35));
+  transform: translate(-50%, -50%);
   color: var(--app-text);
-  text-align: left;
-  transform-origin: 50% 0;
-  transform: translateY(calc(var(--g) * var(--lift, 0px))) scale(calc(1 + var(--g) * var(--grow, 0)));
-  /* Its own arrival, after the words. */
-  opacity: 0;
-  translate: 0 40px;
-  scale: 0.97;
-  transition: opacity 1s var(--out) 0.42s, translate 1.3s var(--out) 0.42s, scale 1.3s var(--out) 0.42s;
 }
-.scene.on .mac { opacity: 1; translate: 0 0; scale: 1; }
-.mac > * { font-size: 1cqw; }
+.sw-desk > * { font-size: 1cqw; }
 
-.ground { position: absolute; inset: 0; }
-.ground .picture { height: 47%; }
+.sw-photo { position: absolute; inset: 0 0 auto; height: 47%; border-radius: 14px 14px 0 0; opacity: var(--photo, 0); }
+.sw-menubar { position: absolute; inset: 0 0 auto; display: flex; align-items: center; gap: 1.4em; height: 2.5em; padding: 0 1.1em; font-size: 0.95cqw; color: #fff; text-shadow: 0 1px 3px rgb(0 0 30 / 0.35); opacity: var(--photo, 0); }
+.sw-menubar span { width: 0.95em; height: 0.95em; border: 0.24em solid currentColor; border-radius: 50%; }
+.sw-menubar b { font-weight: 600; }
+.sw-menubar i { font-style: normal; opacity: 0.86; }
+.sw-menubar em { margin-left: auto; font-style: normal; }
 
-.menubar { position: absolute; inset: 0 0 auto; z-index: 6; display: flex; align-items: center; gap: 1.4em; height: 2.5em; padding: 0 1.1em; font-size: 0.95cqw; color: #fff; text-shadow: 0 1px 3px rgb(0 0 30 / 0.35); opacity: 0; transition: opacity 0.8s var(--out) 0.9s; }
-.scene.on .menubar { opacity: 1; }
-.menubar span { width: 0.95em; height: 0.95em; border: 0.24em solid currentColor; border-radius: 50%; }
-.menubar b { font-weight: 600; }
-.menubar i { font-style: normal; opacity: 0.86; }
-.menubar em { display: inline-flex; align-items: center; gap: 1.1em; margin-left: auto; font-style: normal; font-variant-numeric: tabular-nums; }
-.menubar u { text-decoration: none; }
-.wifi { width: 1.3em; height: 0.95em; background: conic-gradient(from -45deg at 50% 100%, currentColor 90deg, transparent 0); border-radius: 50% 50% 0 0; mask: radial-gradient(circle at 50% 100%, #000 18%, transparent 19% 36%, #000 37% 55%, transparent 56% 73%, #000 74%); }
-.cell { width: 1.9em; height: 0.9em; border: 0.1em solid currentColor; border-radius: 0.28em; background: linear-gradient(currentColor, currentColor) 0.12em 50% / 68% 62% no-repeat; }
-
-/* The task box arrives once the picture is printed; it gives way to the
-   conversation once the request is sent. */
-.composer {
-  position: absolute; top: 30%; left: 30%; width: 40%; z-index: 4;
+.sw-box {
+  position: absolute; top: 30%; left: 30%; width: 40%; z-index: 2;
   padding: 1em 1.1em; border: 1px solid var(--app-line); border-radius: 1.2em;
-  background: rgb(255 255 255 / 0.78); backdrop-filter: blur(18px) saturate(1.4);
+  background: rgb(255 255 255 / 0.82); backdrop-filter: blur(18px) saturate(1.4);
   box-shadow: 0 1em 3em rgb(20 20 60 / 0.12);
-  opacity: calc(var(--shown, 0) * (1 - clamp(0, (var(--t5) - 0.44) * 9, 1)));
-  transform: translateY(calc((1 - var(--shown, 0)) * 1.4em));
-  transition: --shown 0s;
+  opacity: 0;
 }
-.scene.on .composer { animation: arrive 1s var(--out) 1.15s both; }
-@keyframes arrive { from { --shown: 0; } to { --shown: 1; } }
-@property --shown { syntax: "<number>"; inherits: false; initial-value: 0; }
-.prompt { display: flex; align-items: center; min-height: 1.5em; margin-bottom: 1.3em; font-size: 1.06em; color: var(--app-soft); }
-.prompt.typed { color: var(--app-text); }
-.prompt b { display: none; width: 1.5px; height: 1.2em; margin-left: 1px; background: var(--app-text); animation: blink 1.1s steps(2) infinite; }
-.prompt.typed b { display: block; }
-.composer .row { display: flex; align-items: center; justify-content: space-between; color: var(--app-soft); font-size: 0.92em; }
-.hint { display: inline-flex; align-items: center; gap: 0.5em; }
-.send { display: grid; place-items: center; width: 2.1em; height: 2.1em; border-radius: 0.6em; background: rgb(16 16 30 / 0.07); transition: background 0.3s; }
-.prompt.typed ~ .row .send { background: var(--app-blue); color: #fff; }
+.sw-prompt { display: block; margin-bottom: 1.3em; font-size: 1.06em; color: var(--app-soft); }
+.sw-row { display: flex; align-items: center; justify-content: space-between; color: var(--app-soft); font-size: 0.92em; }
+.sw-row span { display: inline-flex; align-items: center; gap: 0.5em; }
+.sw-row b { display: grid; place-items: center; width: 2.1em; height: 2.1em; border-radius: 0.6em; background: rgb(16 16 30 / 0.07); }
 
-/* The widgets come in one after another, in reading order. */
-.grid { position: absolute; inset: 44.5% 9% auto; z-index: 3; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8em; opacity: calc(1 - clamp(0, (var(--t5) - 0.44) * 9, 1)); }
-.grid .w { font-size: 0.86em; opacity: 0; transform: translateY(2.4em) scale(0.95); filter: blur(0.6em); transition: opacity 0.8s var(--out), transform 1s var(--out), filter 0.8s var(--out); transition-delay: calc(1.35s + var(--i) * 90ms); }
-.scene.on .grid .w { opacity: 1; transform: none; filter: none; }
+.sw-cards { position: absolute; inset: 44.5% 9% auto; z-index: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8em; }
+.sw-cards .w { font-size: 0.86em; opacity: 0; will-change: transform, opacity; transition: box-shadow 0.3s, outline-color 0.3s; outline: 2px solid transparent; outline-offset: 2px; }
+.sw-cards .w.swept { outline-color: rgb(47 59 217 / 0.55); box-shadow: 0 0 0 4px rgb(47 59 217 / 0.08); }
 
-/* The conversation that takes the desktop's place once the request is sent. */
-.talk { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; gap: 1em; padding: 17% 26% 0; background: rgb(243 243 246 / 0.52); font-size: 1.08cqw; opacity: calc(clamp(0, (var(--t5) - 0.46) * 12, 1) * (1 - var(--play))); pointer-events: none; }
-.talk p { --in: clamp(0, (var(--t5) - var(--at)) * 14, 1); opacity: var(--in); transform: translateY(calc((1 - var(--in)) * 0.9em)); }
-.talk .you { align-self: flex-start; padding: 0.6em 1em; border: 1px solid var(--app-line); border-radius: 1em; background: rgb(255 255 255 / 0.9); }
-.talk .tool { font-family: var(--mono); font-size: 0.88em; color: var(--app-soft); }
-.talk .ask { display: flex; align-items: center; gap: 0.7em; padding: 0.8em 1em; border: 1px solid var(--app-line); border-radius: 1em; background: rgb(255 255 255 / 0.94); font-family: var(--mono); font-size: 0.86em; }
-.talk .ask i, .talk .ask b { padding: 0.35em 0.9em; border-radius: 0.55em; font: 500 1.08em var(--sans); white-space: nowrap; }
-.talk .ask i { margin-left: auto; background: rgb(16 16 30 / 0.07); }
-.talk .ask b { background: var(--app-blue); color: #fff; }
+/* ---- The last word */
 
-/* The invitation, once the story is told. */
-/* The last word, once the story is told: large, over the screen. */
-.play { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; display: grid; place-items: center; padding: 0 20px 17vh; text-align: center; opacity: var(--play); transform: translateY(calc((1 - var(--play)) * 24px)); filter: blur(calc((1 - var(--play)) * 8px)); pointer-events: none; }
-.play p { font-size: clamp(40px, 7vw, 104px); font-weight: 500; line-height: 1; letter-spacing: -0.05em; color: var(--ink); text-shadow: 0 0 40px rgb(255 255 255 / 0.9), 0 0 12px rgb(255 255 255 / 0.9); text-wrap: balance; }
-.play span { color: var(--blue); }
-.seg { display: inline-flex; padding: 4px; border-radius: 999px; background: var(--panel); }
-.seg button { height: 32px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; color: var(--soft); font: 500 14px var(--sans); cursor: pointer; transition: background 0.2s, color 0.2s; }
-.seg button:hover { color: var(--ink); }
-.seg button[aria-pressed="true"] { background: var(--bg); color: var(--blue); box-shadow: 0 1px 3px rgb(20 20 50 / 0.12); }
+.sw-close { position: absolute; inset: 0; z-index: 7; display: grid; place-content: center; padding: 0 20px; text-align: center; font-size: clamp(40px, 7vw, 104px); font-weight: 500; line-height: 1; letter-spacing: -0.05em; color: var(--ink); text-shadow: 0 0 40px #fff, 0 0 14px #fff; opacity: 0; pointer-events: none; }
+.sw-close span { color: var(--blue); }
+
 
 /* ---- A widget. Everything inside is in ems, so it scales with its font. */
 
@@ -412,11 +411,17 @@ footer a:hover { color: var(--ink); }
 /* ---- Narrow screens: no story, the finished desktop */
 
 @media (max-width: 860px) {
-  .hero { height: auto; }
-  .scene { position: static; height: auto; padding-bottom: 12px; overflow: visible; }
-  .lead { opacity: 1; transform: none; }
-  .mac { width: calc(100vw - 24px); transform: none; }
-  .play { display: none; }
+  .sw { height: auto; }
+  .sw-scene { position: static; height: auto; display: grid; gap: 28px; padding: 44px 0 12px; overflow: visible; }
+  .sw-lead { position: static; padding: 0 20px; }
+  .sw-items, .sw-rect, .sw-cursor, .sw-close { display: none; }
+  .sw-desk { --frame: 1; --photo: 1; position: relative; left: auto; top: auto; width: calc(100vw - 24px); aspect-ratio: auto; padding: 170px 10px 10px; margin: 0 auto; transform: none; }
+  .sw-desk > * { font-size: 10.5px; }
+  .sw-photo { height: 240px; }
+  .sw-menubar { font-size: 10px; }
+  .sw-box { position: relative; top: auto; left: auto; width: auto; margin-bottom: 10px; opacity: 1; }
+  .sw-cards { position: static; grid-template-columns: repeat(2, 1fr); }
+  .sw-cards .w { opacity: 1; }
   .round { height: auto; padding: 80px 0 20px; }
   .pin { position: static; height: auto; display: grid; gap: 28px; padding: 0; }
   .curve { height: auto; perspective: none; font-size: 13px; }
@@ -432,13 +437,13 @@ footer a:hover { color: var(--ink); }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .hero { height: auto; }
-  .scene { position: static; height: auto; padding-bottom: 24px; }
-  .lead { opacity: 1; transform: none; }
-  .mac { transform: none; }
-  .play { display: none; }
-  .rv, .mac, .menubar, .grid .w { transition: none; }
-  .scene.on .composer { animation: none; --shown: 1; }
+  .sw { height: auto; }
+  .sw-scene { position: static; height: auto; display: grid; gap: 32px; padding: 44px 0 24px; overflow: visible; }
+  .sw-lead { position: static; }
+  .sw-items, .sw-rect, .sw-cursor, .sw-close { display: none; }
+  .sw-desk { --frame: 1; --photo: 1; position: relative; left: auto; top: auto; margin: 0 auto; transform: none; }
+  .sw-box, .sw-cards .w { opacity: 1; }
+  .sw-rv, .sw-item > .icon { transition: none; }
   [data-reveal] { opacity: 1; transform: none; filter: none; transition: none; }
   .ring.charging svg, .reply b, .prompt b, .thread .ask b { animation: none; }
   .ring.charging svg:last-child { opacity: 0; }

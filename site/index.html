@@ -25,43 +25,31 @@
 
 <main id="top">
 
-  <!-- The page opens on Oree itself: the words, then the desktop under
-       them, arriving a piece at a time. Scrolling brings the desktop up to
-       fill the view, and a request is typed and answered on it. -->
-  <section class="hero" data-hero aria-labelledby="headline">
-    <div class="scene" data-scene-root>
+  <!-- A cursor sweeps the clutter of a desktop into Oree's widgets. -->
+  <section class="sw" data-sw aria-labelledby="headline">
+    <div class="sw-scene" data-scene>
 
-      <div class="lead">
-        <h1 id="headline"><span class="rv" style="--d:0">Your desktop,</span> <span class="rv" style="--d:1">put to work.</span></h1>
-        <p class="rv" style="--d:2">Oree takes the place of the macOS desktop: a picture, a box to ask for anything, and the things you check all day, already open.</p>
-        <a class="button rv" style="--d:3" href="https://github.com/barisbuild/oree">Get Oree for Mac</a>
-      </div>
-
-      <div class="mac" aria-label="The Oree desktop">
-        <div class="ground" aria-hidden="true"><canvas class="picture" data-picture data-hero-picture></canvas></div>
-        <div class="menubar" aria-hidden="true"><span></span><b>Finder</b><i>File</i><i>Edit</i><i>View</i><i>Go</i><i>Window</i><em><u class="wifi"></u><u class="cell"></u>Sat 14 Nov&ensp;9:41</em></div>
-
-        <div class="composer" aria-hidden="true">
-          <span class="prompt"><span data-ask>Ask for anything on this Mac</span><b></b></span>
-          <div class="row">
-            <span class="hint"><svg data-icon="cursor"></svg>Select files to ask about them</span>
-            <span class="send"><svg data-icon="arrowUp"></svg></span>
-          </div>
+      <div class="sw-desk" data-desk aria-hidden="true">
+        <canvas class="picture sw-photo" data-picture data-hero-picture></canvas>
+        <div class="sw-menubar"><span></span><b>Finder</b><i>File</i><i>Edit</i><i>View</i><i>Go</i><em>Sat 14 Nov&ensp;9:41</em></div>
+        <div class="sw-box" data-box>
+          <span class="sw-prompt">Ask for anything on this Mac</span>
+          <div class="sw-row"><span><svg data-icon="cursor"></svg>Select files to ask about them</span><b><svg data-icon="arrowUp"></svg></b></div>
         </div>
-
-        <div class="grid" data-grid></div>
-
-        <div class="talk" aria-hidden="true">
-          <p class="you" style="--at:0.5">Tidy my Downloads into folders by month</p>
-          <p class="tool" style="--at:0.6">Bash: ls -lt ~/Downloads</p>
-          <p class="ask" style="--at:0.7">mv ~/Downloads/*.pdf ~/Downloads/2026-11/ <i>Don’t allow</i><b>Allow</b></p>
-          <p style="--at:0.84">Done. 46 files are now in five folders, one for each month. Nothing was deleted.</p>
-        </div>
+        <div class="sw-cards" data-cards></div>
       </div>
 
-      <div class="play" aria-hidden="true">
-        <p>Not an app.<br><span>Your desktop.</span></p>
+      <div class="sw-lead" data-lead>
+        <h1 id="headline"><span class="sw-rv" style="--d:0">Your desktop,</span> <span class="sw-rv" style="--d:1">put to work.</span></h1>
+        <p class="sw-rv" style="--d:2">Oree takes the place of the macOS desktop: a picture, a box to ask for anything, and the things you check all day, already open.</p>
+        <a class="button sw-rv" style="--d:3" href="https://github.com/barisbuild/oree">Get Oree for Mac</a>
       </div>
+
+      <div class="sw-items" data-items aria-hidden="true"></div>
+      <i class="sw-rect" data-rect aria-hidden="true"></i>
+      <i class="sw-cursor" data-cursor aria-hidden="true"><i></i></i>
+
+      <p class="sw-close" data-close aria-hidden="true">Not an app.<br><span>Your desktop.</span></p>
     </div>
   </section>
 
