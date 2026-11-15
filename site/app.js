@@ -68,7 +68,7 @@ const widgets = [
     key: "playing", icon: "music", name: "Now playing", line: "Whatever is playing in any app: cover, progress and controls.",
     html: `<h3>${icon("music")}Now playing<span class="app" aria-hidden="true">${icon("music")}</span></h3>
       <div class="playing"><span class="cover"></span><div>
-      <strong>Low Tide</strong><small>Halden — Shorelines</small>
+      <strong>Deep End</strong><small>Lune Varela — Night Swims</small>
       <span class="progress"><span class="bar"><i></i></span><span class="times"><i>1:25</i><i>-2:09</i></span></span>
       <span class="controls"><i>${icon("back")}</i><b>${icon("pause")}</b><i>${icon("forward")}</i></span></div></div>`,
   },
@@ -169,7 +169,7 @@ const clutter = [
   ["Notes.txt", "note", 29, 15, 2], ["Brand", "", 11, 23, 0], ["Harbour.jpg", "pic", 70, 12, 0],
   ["Lunch.ics", "cal", 86, 21, 1], ["Screenshot.png", "pic", 8, 47, 0], ["Flight.ics", "cal", 92, 46, 1],
   ["Invoices", "", 18, 66, 0], ["Tickets.eml", "eml", 79, 70, 3], ["To do.txt", "note", 26, 86, 2],
-  ["Low Tide.mp3", "mp3", 61, 86, 4], ["Groceries.txt", "note", 41, 89, 2], ["Invoice.eml", "eml", 90, 83, 3],
+  ["Deep End.mp3", "mp3", 61, 86, 4], ["Groceries.txt", "note", 41, 89, 2], ["Invoice.eml", "eml", 90, 83, 3],
 ];
 $("[data-items]").innerHTML = clutter.map(([name, kind], n) => {
   const drift = (seed) => ((((n + 3) * seed) % 11) - 5).toFixed(1);
@@ -181,8 +181,6 @@ const strewn = [...$("[data-items]").children].map((element, n) => ({
   x: clutter[n][2] / 100,
   y: clutter[n][3] / 100,
   target: clutter[n][4],
-  // Its place in its pile, counted from the bottom.
-  layer: clutter.slice(0, n).filter((other) => other[4] === clutter[n][4]).length,
 }));
 
 // The widgets just made get their icons.
@@ -247,14 +245,12 @@ function tell() {
   for (const file of strewn) {
     const { lies } = file;
     const pile = piles[file.target];
-    const open = opened[file.target];
-    // To its pile, stacked a little off true, then into the widget.
-    const stacked = { x: pile.x + file.layer * 3, y: pile.y - file.layer * 4 };
-    const x = mix(mix(lies.x, stacked.x, gather), homes[file.target].x, ease(open));
-    const y = mix(mix(lies.y, stacked.y, gather), homes[file.target].y, ease(open));
-    const turn = gather * (file.layer % 2 ? 5 : -4) * (1 - open);
-    file.element.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -50%) rotate(${turn.toFixed(2)}deg) scale(${(1 - 0.2 * gather - 0.5 * ease(open)).toFixed(3)})`;
-    file.element.style.opacity = (1 - ease(span(open, 0.15, 0.55))).toFixed(3);
+    // Toward the place its widget opens from, fading as the files of a
+    // kind come together, so none piles on another.
+    const x = mix(lies.x, pile.x, gather);
+    const y = mix(lies.y, pile.y, gather);
+    file.element.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -50%) scale(${(1 - 0.35 * gather).toFixed(3)})`;
+    file.element.style.opacity = (1 - ease(span(gather, 0.35, 0.95))).toFixed(3);
   }
 
   cards.forEach((element, index) => {

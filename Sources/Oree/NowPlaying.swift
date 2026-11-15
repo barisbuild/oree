@@ -123,9 +123,9 @@ final class NowPlaying {
         // A recording may show what is really playing, with the rest made up:
         // `defaults write space.oree.app demoLiveMusic -bool true`.
         if Demo.on && !UserDefaults.standard.bool(forKey: "demoLiveMusic") {
-            title = "Low Tide"
-            artist = "Halden"
-            album = "Shorelines"
+            title = "Deep End"
+            artist = "Lune Varela"
+            album = "Night Swims"
             duration = 214
             elapsed = 61
             readAt = Date()
