@@ -132,7 +132,7 @@ drawIcons();
 
 // ---- The hero: a cursor sweeps the clutter of a desktop into Oree.
 // Each moving part's place is worked out from how far the page has
-// played, `p`, from 0 to 1 over PLAY_LENGTH:
+// played, `p`, from 0 to 1 over SWEEP_LENGTH and REST_LENGTH:
 //   0.06–0.32  the heroPointer drags a rectangle across the strewn; the words go
 //   0.36–0.46  what it picked gathers, a small pile for each widget
 //   0.44–0.72  each pile opens into its widget, one after another
@@ -335,7 +335,10 @@ addEventListener("scroll", turnWheel, { passive: true });
 
 // The story plays once, slowly, from a moment after the page appears.
 const PLAY_DELAY = 300;
-const PLAY_LENGTH = 15000;
+// The first sweep (p 0 to 0.36) is quick so nobody waits on it; the rest
+// (p 0.36 to 1) takes its time.
+const SWEEP_LENGTH = 2600;
+const REST_LENGTH = 9600;
 let heroP = 0;
 function play() {
   let started = null;
@@ -345,7 +348,8 @@ function play() {
     if (last !== null && now - last > 200) started += now - last;
     last = now;
     started ??= now;
-    heroP = clamp((now - started - PLAY_DELAY) / PLAY_LENGTH);
+    const elapsed = Math.max(0, now - started - PLAY_DELAY);
+    heroP = elapsed < SWEEP_LENGTH ? 0.36 * elapsed / SWEEP_LENGTH : 0.36 + 0.64 * clamp((elapsed - SWEEP_LENGTH) / REST_LENGTH);
     tell();
     if (heroP < 1) requestAnimationFrame(frame);
   };
