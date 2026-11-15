@@ -59,15 +59,17 @@ const widgets = [
   {
     key: "playing", icon: "music", name: "Now playing", line: "Whatever is playing in any app, with controls.",
     html: `<h3>${icon("music")}Now playing</h3>
-      <div class="playing"><span class="cover"></span><div><strong>Low Tide</strong><small>Halden · Music</small>
-      <span class="controls"><i>${icon("arrowLeft")}</i><b>${icon("pause")}</b><i>${icon("arrowRight")}</i></span></div></div>`,
+      <div class="playing"><span class="cover"></span><div><span class="src"><i class="app"></i>Music<span class="eq"><i></i><i></i><i></i></span></span>
+      <strong>Low Tide</strong><small>Halden</small>
+      <span class="controls"><i>${icon("back")}</i><b>${icon("pause")}</b><i>${icon("forward")}</i></span></div></div>`,
   },
   {
     key: "weather", icon: "sunCloud", name: "Weather", line: "Now, and the next four days, where you are.",
-    html: `<h3>${icon("sunCloud")}Lisbon</h3>
-      <div class="weather"><div class="now"><b>${icon("sunCloud")}</b><strong>18°</strong><span><small>Partly cloudy</small><i>H 20° L 14°</i></span></div>
-      <ol><li>Today${icon("sunCloud")}<i>20° 14°</i></li><li>Sun${icon("sun")}<i>23° 15°</i></li>
-      <li>Mon${icon("rain")}<i>19° 13°</i></li><li>Tue${icon("cloud")}<i>18° 12°</i></li></ol></div>`,
+    html: `<h3>${icon("sunCloud")}Weather</h3>
+      <div class="weather"><div class="now"><div><small>Lisbon</small><strong>18°</strong></div>
+      <span>${icon("sunCloud")}<small>Partly cloudy</small><i>H 20° L 14°</i></span></div>
+      <ol><li>Today${icon("sunCloud")}<i><b>20°</b> 14°</i></li><li>Sun${icon("sun")}<i><b>23°</b> 15°</i></li>
+      <li>Mon${icon("rain")}<i><b>19°</b> 13°</i></li><li>Tue${icon("cloud")}<i><b>18°</b> 12°</i></li></ol></div>`,
   },
   {
     key: "batteries", icon: "battery", name: "Batteries", line: "This Mac, your earbuds and their case, your keyboard.",
@@ -77,11 +79,12 @@ const widgets = [
       <span class="ring" style="--level:38">${icon("keyboard")}</span></div>`,
   },
   {
-    key: "focus", icon: "timer", name: "Focus", line: "Twenty-five minutes, one button. Try it.",
+    key: "focus", icon: "timer", name: "Focus", line: "Drag the ruler to set the length, then press play. Try it.",
     html: `<h3>${icon("timer")}Focus</h3>
       <div class="focus"><strong data-clock>25:00</strong>
-      <button type="button" data-focus aria-label="Start the focus timer">${icon("play")}</button>
-      <span class="bar"><i data-bar></i></span></div>`,
+      <span class="keys"><button type="button" class="again" data-again aria-label="Start over" hidden>${icon("rotate")}</button>
+      <button type="button" data-focus aria-label="Start the focus timer">${icon("play")}</button></span>
+      <div class="ruler" data-ruler><div class="scale" data-scale></div><i class="needle"></i></div></div>`,
   },
 ];
 
@@ -470,17 +473,33 @@ for (const button of $$("[data-look]")) {
   });
 }
 
-// ---- Focus: a real timer, wherever a Focus widget is showing
+// ---- Focus: a real timer, wherever a Focus widget is showing. Under
+// the clock, a ruler of minutes slides beneath a fixed needle; before a
+// focus begins it can be dragged to set how long it runs.
 
-const LENGTH = 25 * 60;
-let remaining = LENGTH;
+const TICK = 0.75; // em between minutes on the ruler
+let length = 25 * 60;
+let remaining = length;
 let ticking;
+const fresh = () => !ticking && remaining === length;
+
+// Each ruler gets an hour of ticks, every fifth numbered.
+for (const scale of $$("[data-scale]")) {
+  scale.innerHTML = Array.from({ length: 61 }, (_, minute) =>
+    `<i class="${minute % 5 ? "" : "major"}" style="--m:${minute}">${minute % 5 ? "" : `<b>${minute}</b>`}</i>`).join("");
+}
 
 function showClock() {
   const seconds = Math.ceil(remaining);
   const text = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+  const minutes = remaining / 60;
   for (const clock of $$("[data-clock]")) clock.textContent = text;
-  for (const bar of $$("[data-bar]")) bar.style.width = `${(1 - remaining / LENGTH) * 100}%`;
+  for (const scale of $$("[data-scale]")) {
+    scale.style.transform = `translateX(${(-minutes * TICK).toFixed(3)}em)`;
+    [...scale.children].forEach((tick, minute) => tick.classList.toggle("past", minute > minutes));
+  }
+  for (const ruler of $$("[data-ruler]")) ruler.classList.toggle("free", fresh());
+  for (const again of $$("[data-again]")) again.hidden = fresh();
 }
 
 function toggleFocus() {
@@ -494,17 +513,59 @@ function toggleFocus() {
       if (remaining === 0) {
         clearInterval(ticking);
         ticking = undefined;
-        remaining = LENGTH;
+        remaining = length;
+        showPlay(true);
       }
       showClock();
     }, 250);
   }
+  showPlay(running);
+  showClock();
+}
+
+function showPlay(stopped) {
   for (const button of $$("[data-focus]")) {
-    $("svg", button).innerHTML = icons[running ? "play" : "pause"];
-    button.setAttribute("aria-label", running ? "Start the focus timer" : "Pause the focus timer");
+    $("svg", button).innerHTML = icons[stopped ? "play" : "pause"];
+    button.setAttribute("aria-label", stopped ? "Start the focus timer" : "Pause the focus timer");
   }
 }
+
+function startOver() {
+  clearInterval(ticking);
+  ticking = undefined;
+  remaining = length;
+  showPlay(true);
+  showClock();
+}
+
 for (const button of $$("[data-focus]")) button.addEventListener("click", toggleFocus);
+for (const button of $$("[data-again]")) button.addEventListener("click", startOver);
+
+// Drawn right, fewer minutes; drawn left, more: a minute at a time, 1 to 60.
+for (const ruler of $$("[data-ruler]")) {
+  ruler.addEventListener("pointerdown", (down) => {
+    if (!fresh()) return;
+    down.preventDefault();
+    down.stopPropagation();
+    const em = parseFloat(getComputedStyle(ruler).fontSize) * TICK;
+    const from = length / 60;
+    ruler.setPointerCapture(down.pointerId);
+    const move = (event) => {
+      const minutes = Math.min(60, Math.max(1, Math.round(from - (event.clientX - down.clientX) / em)));
+      if (minutes * 60 !== length) {
+        length = remaining = minutes * 60;
+        showClock();
+      }
+    };
+    const up = () => {
+      ruler.removeEventListener("pointermove", move);
+      ruler.removeEventListener("pointerup", up);
+    };
+    ruler.addEventListener("pointermove", move);
+    ruler.addEventListener("pointerup", up);
+  });
+}
+showClock();
 
 // Reminders can be ticked off, as they can in the app.
 for (const row of $$(".todo li")) row.addEventListener("click", () => row.classList.toggle("done"));
@@ -527,7 +588,7 @@ const SITE_PHOTOS = [
 ];
 
 function show(items, place) {
-  iconGrid.innerHTML = items.map(([name, kind]) => `<div class="icon ${kind}" data-name="${name}"><b></b><span>${name}</span></div>`).join("");
+  iconGrid.innerHTML = items.map(([name, kind]) => `<div class="icon ${kind}" data-name="${name}"><b></b><span><em>${name}</em></span></div>`).join("");
   where.textContent = place;
   path.classList.toggle("up", place !== "Desktop");
   count.textContent = `${items.length} items`;
@@ -652,6 +713,45 @@ const ANSWER = "Done. 46 files are now in five folders, one for each month. Noth
 let conversation = 0;
 const STOPPED = Symbol("stopped");
 
+const thinking = $("[data-thinking]");
+const elapsed = $("[data-elapsed]");
+const TOOLS = ["Bash: ls -lt ~/Downloads", "Bash: mkdir ~/Downloads/2026-{07..11}"];
+
+/** As in the app: what the agent runs, folded into one line under way. */
+function trace(lines, running) {
+  const line = say("trace", `<span class="head">${icon("sparkle")}<em></em>${icon("chevronDown")}</span><span class="list"></span>`);
+  const list = $(".list", line);
+  for (const text of lines) list.insertAdjacentHTML("beforeend", `<span>${text}</span>`);
+  drawIcons(line);
+  settle(line, running);
+  return line;
+}
+function settle(line, running) {
+  const count = $$(".list span", line).filter((row) => !row.textContent.startsWith("Allowed")).length;
+  $("em", line).textContent = running ? "Running tools" : `Ran ${count} tool${count === 1 ? "" : "s"}`;
+  line.classList.toggle("running", running);
+  line.classList.toggle("open", running);
+}
+
+/** The answer, a word at a time, each word fading in. */
+async function stream(text, pause) {
+  const line = say("", "");
+  for (const word of text.split(" ")) {
+    line.insertAdjacentHTML("beforeend", `<span class="word">${word} </span>`);
+    await pause(45);
+  }
+}
+
+/** The agent at work: a moving mark, a label and the seconds going by. */
+function think(on) {
+  thinking.classList.toggle("on", on);
+  clearInterval(think.timer);
+  if (!on) return;
+  const began = performance.now();
+  elapsed.textContent = "0.0s";
+  think.timer = setInterval(() => (elapsed.textContent = `${((performance.now() - began) / 1000).toFixed(1)}s`), 100);
+}
+
 async function converse() {
   const run = ++conversation;
   const pause = async (ms) => {
@@ -661,6 +761,7 @@ async function converse() {
   try {
     for (;;) {
       thread.replaceChildren();
+      think(false);
       typing.textContent = "";
       await pause(700);
       for (const letter of REQUEST) {
@@ -670,27 +771,35 @@ async function converse() {
       await pause(350);
       typing.textContent = "";
       say("you", REQUEST);
+      think(true);
+      await pause(1300);
+      const tools = trace([TOOLS[0]], true);
+      await pause(1000);
+      $(".list", tools).insertAdjacentHTML("beforeend", `<span>${TOOLS[1]}</span>`);
       await pause(900);
-      say("tool", "Bash: ls -lt ~/Downloads");
-      await pause(1100);
+      think(false);
       const ask = say("ask", "mv ~/Downloads/*.pdf ~/Downloads/2026-11/ <i>Don’t allow</i><b>Allow</b>");
       await pause(2100);
-      ask.className = "tool in";
-      ask.textContent = "Allowed · mv ~/Downloads/*.pdf ~/Downloads/2026-11/";
+      ask.remove();
+      $(".list", tools).insertAdjacentHTML("beforeend", "<span>Allowed · mv ~/Downloads/*.pdf ~/Downloads/2026-11/</span>");
+      think(true);
       await pause(1000);
-      say("", ANSWER);
+      think(false);
+      settle(tools, false);
+      await stream(ANSWER, pause);
       await pause(5200);
     }
   } catch (reason) {
+    think(false);
     if (reason !== STOPPED) throw reason;
   }
 }
 
 function showConversation() {
   thread.replaceChildren();
-  for (const [kind, text] of [["you", REQUEST], ["tool", "Bash: ls -lt ~/Downloads"], ["tool", "Allowed · mv ~/Downloads/*.pdf ~/Downloads/2026-11/"], ["", ANSWER]]) {
-    say(kind, text);
-  }
+  say("you", REQUEST);
+  trace([...TOOLS, "Allowed · mv ~/Downloads/*.pdf ~/Downloads/2026-11/"], false);
+  say("", ANSWER);
 }
 
 // Each screen lies flat as it comes up the page.
@@ -727,6 +836,7 @@ whenSeen(files, () => {
 }, () => (demonstrate.inView = false));
 
 whenSeen(thread.parentElement, () => (still ? showConversation() : converse()), () => conversation++, 0.3);
+thread.addEventListener("click", (event) => event.target.closest(".trace .head")?.parentElement.classList.toggle("open"));
 
 let printed = false;
 whenSeen(plate, () => {
