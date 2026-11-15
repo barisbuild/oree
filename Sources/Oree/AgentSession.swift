@@ -52,6 +52,9 @@ final class AgentSession: Identifiable {
     let id = UUID()
     let agent: Agent
     let folder: URL
+    /// Whether the user has chosen to let agents act without asking. Read
+    /// at each request, so a change applies to the next one.
+    @ObservationIgnored private let bypass: () -> Bool
     private(set) var entries: [Entry] = []
     private(set) var approvals: [Approval] = []
     private(set) var state: State = .idle
@@ -73,9 +76,10 @@ final class AgentSession: Identifiable {
     @ObservationIgnored private var calls: [Int: String] = [:]
     @ObservationIgnored private var nextCall = 0
 
-    init(agent: Agent, folder: URL) {
+    init(agent: Agent, folder: URL, bypass: @escaping () -> Bool = { false }) {
         self.agent = agent
         self.folder = folder
+        self.bypass = bypass
         switch agent {
         case .claude:
             run("exec claude --print --input-format stream-json --output-format stream-json --verbose --permission-prompt-tool stdio --append-system-prompt '\(Self.desktopBrief)'")
@@ -324,12 +328,11 @@ final class AgentSession: Identifiable {
                   request["subtype"] as? String == "can_use_tool"
             else { break }
             let input = request["input"] as? [String: Any] ?? [:]
-            approvals.append(Approval(
+            ask(Approval(
                 id: id,
                 summary: Self.describe(tool: request["tool_name"] as? String, input: input),
                 input: input
             ))
-            state = .waiting
         case "result":
             if event["is_error"] as? Bool == true,
                let text = event["result"] as? String,
@@ -470,8 +473,15 @@ final class AgentSession: Identifiable {
             write(["id": id, "error": ["code": -32601, "message": "Oree does not handle \(method)."]])
             return
         }
-        approvals.append(Approval(id: "\(id)", summary: summary, input: input, request: id, method: method))
+        ask(Approval(id: "\(id)", summary: summary, input: input, request: id, method: method))
+    }
+
+    /// Put a request to the user, or allow it at once when they have chosen
+    /// to bypass the asking; it is noted in the conversation either way.
+    private func ask(_ approval: Approval) {
+        approvals.append(approval)
         state = .waiting
+        if bypass() { resolve(approval, allow: true) }
     }
 
     /// "/bin/zsh -lc 'mkdir Notes'" is shown as "mkdir Notes".

@@ -66,7 +66,12 @@ final class SessionStore {
     /// there are any.
     @discardableResult
     func start(_ task: String, about items: [URL]) -> AgentSession {
-        let session = AgentSession(agent: preferences.agent, folder: FileManager.default.homeDirectoryForCurrentUser)
+        let preferences = preferences
+        let session = AgentSession(
+            agent: preferences.agent,
+            folder: FileManager.default.homeDirectoryForCurrentUser,
+            bypass: { preferences.bypassPermissions }
+        )
         sessions.insert(session, at: 0)
         var message = task
         if !items.isEmpty {

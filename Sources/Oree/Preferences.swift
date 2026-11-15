@@ -22,6 +22,9 @@ final class Preferences {
     var stacks: Bool { didSet { defaults.set(stacks, forKey: "stacks") } }
     /// Folders kept one click away.
     var pinned: [URL] { didSet { defaults.set(pinned.map(\.path), forKey: "pinned") } }
+    /// Agents act without asking first. Off unless the user has turned it on
+    /// and accepted that Oree is not responsible for what follows.
+    var bypassPermissions: Bool { didSet { defaults.set(bypassPermissions, forKey: "bypassPermissions") } }
     /// The chosen picture; nil follows the system's own wallpaper.
     var wallpaperPath: String? { didSet { defaults.set(wallpaperPath, forKey: "wallpaperPath") } }
 
@@ -37,6 +40,7 @@ final class Preferences {
         showsFiles = defaults.object(forKey: "showsFiles") as? Bool ?? true
         wallpaperPath = defaults.string(forKey: "wallpaperPath")
         stacks = defaults.bool(forKey: "stacks")
+        bypassPermissions = defaults.bool(forKey: "bypassPermissions")
         if let saved = defaults.stringArray(forKey: "pinned") {
             pinned = saved.map { URL(fileURLWithPath: $0) }
         } else {

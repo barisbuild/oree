@@ -51,7 +51,7 @@ struct HomeView: View {
 
                 VStack(spacing: 28) {
                     Composer(store: store, picked: picked, open: open)
-                        .frame(maxWidth: 600)
+                        .frame(maxWidth: 680)
                     DesktopView(store: store, picked: $picked, frames: frames, open: open)
                         .frame(maxWidth: 1320)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -124,15 +124,15 @@ struct Composer: View {
     @State private var attached: [URL] = []
     @FocusState private var composing: Bool
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .bottom, spacing: 8) {
-                RoundButton(symbol: "plus", help: "Add files to ask about", action: addFiles)
+    @State private var confirmsBypass = false
 
+    var body: some View {
+        VStack(alignment: .trailing, spacing: 10) {
+            VStack(alignment: .leading, spacing: 14) {
                 TextField("Task", text: $draft, prompt: Text(""), axis: .vertical)
                     .textFieldStyle(.plain)
                     .font(.body)
-                    .lineLimit(1...6)
+                    .lineLimit(2...6)
                     .focused($composing)
                     .onSubmit(send)
                     // The system dims its own prompt too far to read on glass.
@@ -143,40 +143,75 @@ struct Composer: View {
                                 .allowsHitTesting(false)
                         }
                     }
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 4)
 
-                agentMenu
-                    .padding(.bottom, 8)
-
-                RoundButton(symbol: "mic", help: "Dictate", outlined: true, action: dictate)
-
-                Button(action: send) {
-                    IconView(.arrowUp, size: 16)
-                        .foregroundStyle(canSend ? Color.white : Theme.secondary)
-                        .frame(width: 34, height: 34)
-                        .glass(tinted: canSend ? Theme.accent : nil, in: Circle())
+                HStack(spacing: 10) {
+                    RoundButton(symbol: "plus", help: "Add files to ask about", action: addFiles)
+                    if !about.isEmpty {
+                        Text("\(about.count) \(about.count == 1 ? "item" : "items")")
+                            .font(.callout)
+                            .foregroundStyle(Theme.secondary)
+                    }
+                    permissionMenu
+                    Spacer()
+                    agentLabel
+                    Button(action: send) {
+                        IconView(.arrowUp, size: 15)
+                            .foregroundStyle(canSend ? Color.white : Theme.secondary)
+                            .frame(width: 30, height: 30)
+                            .glass(tinted: canSend ? Theme.accent : nil, in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!canSend)
+                    .help("Start an agent on this task")
                 }
-                .buttonStyle(.plain)
-                .disabled(!canSend)
-                .help("Start an agent on this task")
             }
-            .padding(7)
-            .glass(in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .padding(14)
+            .glass(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
 
-            IconLabel(
-                about.isEmpty
-                    ? "Select files to ask about them"
-                    : "\(about.count) selected \(about.count == 1 ? "item" : "items")",
-                about.isEmpty ? .cursor : .checkCircle
-            )
-            .font(.callout)
-            .foregroundStyle(Theme.secondary)
-            .padding(.horizontal, 12)
-        }
-        .overlay(alignment: .topTrailing) {
             AgentsButton(store: store, open: open)
-                .offset(y: -40)
+        }
+        .alert("Let agents act without asking?", isPresented: $confirmsBypass) {
+            Button("I accept", role: .destructive) { store.preferences.bypassPermissions = true }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Agents will run commands and create, change, move or delete files without asking you first. Oree is not responsible for any loss of data or other harm that results.")
+        }
+    }
+
+    /// Whether agents ask before they act. Turning the asking off needs the
+    /// user to accept the risk first; turning it back on does not.
+    private var permissionMenu: some View {
+        Menu {
+            Button {
+                store.preferences.bypassPermissions = false
+            } label: {
+                if store.preferences.bypassPermissions { Text("Ask permission") } else { Label("Ask permission", systemImage: "checkmark") }
+            }
+            Button {
+                if !store.preferences.bypassPermissions { confirmsBypass = true }
+            } label: {
+                if store.preferences.bypassPermissions { Label("Bypass permissions", systemImage: "checkmark") } else { Text("Bypass permissions") }
+            }
+        } label: {
+            Text(store.preferences.bypassPermissions ? "Bypass permissions" : "Ask permission")
+                .font(.callout)
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .foregroundStyle(store.preferences.bypassPermissions ? Color.orange : Theme.secondary)
+        .help("Whether agents ask before they change anything")
+    }
+
+    /// The agent that takes the task: a menu when there is a choice, its
+    /// name alone when there is not.
+    @ViewBuilder
+    private var agentLabel: some View {
+        if store.preferences.agents.count > 1 {
+            agentMenu
+        } else {
+            Text(store.preferences.agent.name)
+                .font(.callout)
+                .foregroundStyle(Theme.secondary)
         }
     }
 
@@ -193,14 +228,6 @@ struct Composer: View {
         panel.prompt = "Add"
         if panel.runModal() == .OK {
             attached += panel.urls.filter { !attached.contains($0) }
-        }
-    }
-
-    /// The system's own dictation, into the task field.
-    private func dictate() {
-        composing = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            NSApp.sendAction(Selector(("startDictation:")), to: nil, from: nil)
         }
     }
 
@@ -242,23 +269,19 @@ struct Composer: View {
     }
 }
 
-/// A round control beside the task field.
+/// A round control in the task box.
 private struct RoundButton: View {
     let symbol: String
     let help: String
-    var outlined = false
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 15, weight: .medium))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(Theme.primary)
-                .frame(width: 34, height: 34)
-                .background(outlined ? Color.clear : Theme.panel, in: Circle())
-                .overlay {
-                    if outlined { Circle().strokeBorder(Theme.hairline) }
-                }
+                .frame(width: 30, height: 30)
+                .background(Theme.panel, in: Circle())
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
