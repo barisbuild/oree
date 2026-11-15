@@ -33,7 +33,11 @@ final class BatteryFeed {
             return
         }
         Task.detached(priority: .utility) {
-            let all = Self.thisMac() + Self.bluetooth()
+            let accessories = Self.accessories()
+            let named = Set(accessories.map { $0.name.lowercased() })
+            // The Bluetooth report fills in what the power sources leave out,
+            // such as devices that are away but left a level behind.
+            let all = Self.thisMac() + accessories + Self.bluetooth().filter { !named.contains($0.name.lowercased()) }
             let known = all.filter { $0.level != nil }
             // Of the silent ones, a keyboard or a mouse is the likelier wish.
             let silent = all.filter { $0.level == nil && !$0.stale }
@@ -64,9 +68,41 @@ final class BatteryFeed {
                 name: Host.current().localizedName ?? "This Mac",
                 icon: .laptop,
                 level: level,
-                charging: about[kIOPSPowerSourceStateKey] as? String == kIOPSACPowerValue,
+                charging: about[kIOPSIsChargingKey] as? Bool == true,
                 stale: false
             )
+        }
+    }
+
+    /// The accessories the system tracks the power of: the same list its own
+    /// Batteries widget reads, with AirPods Max, keyboards and mice that the
+    /// Bluetooth report gives no level for.
+    private static func accessories() -> [Device] {
+        typealias ByType = @convention(c) (Int32) -> Unmanaged<CFTypeRef>?
+        guard let symbol = dlsym(UnsafeMutableRawPointer(bitPattern: -2), "IOPSCopyPowerSourcesByType"),
+              let info = unsafeBitCast(symbol, to: ByType.self)(0)?.takeRetainedValue(),
+              let sources = IOPSCopyPowerSourcesList(info)?.takeRetainedValue() as? [CFTypeRef]
+        else { return [] }
+        return sources.compactMap { source in
+            guard let about = IOPSGetPowerSourceDescription(info, source)?.takeUnretainedValue() as? [String: Any],
+                  about[kIOPSTypeKey] as? String != kIOPSInternalBatteryType,
+                  let name = about[kIOPSNameKey] as? String
+            else { return nil }
+            // A pair of earbuds comes as parts: as charged as the emptier one.
+            let parts = about["Combined Parts"] as? [[String: Any]] ?? []
+            let levels = (parts.isEmpty ? [about] : parts).compactMap { $0[kIOPSCurrentCapacityKey] as? Int }
+            guard let level = levels.min() else { return nil }
+            let charging = (parts.isEmpty ? [about] : parts).contains { $0[kIOPSIsChargingKey] as? Bool == true }
+            let category = (about["Accessory Category"] as? String ?? "").lowercased()
+            let icon: Icon = category.contains("case") ? .earbudsCase
+                : category.contains("headset") || category.contains("headphone")
+                    ? (parts.isEmpty && about["Part Identifier"] as? String == "Single" ? .headphones : .earbuds)
+                : category.contains("keyboard") ? .keyboard
+                : category.contains("mouse") || category.contains("trackpad") ? .mouse
+                : category.contains("phone") ? .phone
+                : .bluetooth
+            let id = about["Accessory Identifier"] as? String ?? name
+            return Device(id: id, name: name, icon: icon, level: level, charging: charging, stale: false)
         }
     }
 
@@ -144,6 +180,9 @@ private struct Ring: View {
 
     private var charging: Bool { device?.charging == true }
 
+    /// The share of the ring left open at the top for the bolt.
+    private var gap: CGFloat { charging ? 0.05 : 0 }
+
     private var colour: Color {
         guard let level = device?.level else { return .clear }
         return level <= 10 ? .red : level <= 20 ? .orange : .green
@@ -152,20 +191,23 @@ private struct Ring: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Theme.panel, lineWidth: 5)
+                .trim(from: gap, to: 1 - gap)
+                .stroke(Theme.panel, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                .rotationEffect(.degrees(-90))
             if let device {
                 Circle()
-                    .trim(from: 0, to: CGFloat(device.level ?? 0) / 100)
+                    .trim(from: gap, to: gap + (1 - 2 * gap) * CGFloat(device.level ?? 0) / 100)
                     .stroke(colour, style: StrokeStyle(lineWidth: 5, lineCap: .round))
                     .rotationEffect(.degrees(-90))
+                IconView(device.icon, size: 26)
+                    .opacity(device.level == nil ? 0.45 : 1)
+                // Charging, as the system's own widget shows it: a small
+                // bolt in a gap at the top of the ring.
                 if charging {
-                    // Charging: the device gives way to a green bolt in the
-                    // middle of the ring, then comes back.
-                    IconSwap(first: device.icon, second: .bolt, secondColour: NSColor(colour))
-                        .frame(width: 24, height: 24)
-                } else {
-                    IconView(device.icon, size: 26)
-                        .opacity(device.level == nil ? 0.45 : 1)
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(colour)
+                        .offset(y: -31)
                 }
             }
         }
@@ -176,83 +218,3 @@ private struct Ring: View {
         } ?? "")
     }
 }
-
-/// Two icons in one place, each fading into the other in turn. The system's
-/// compositor runs the animation, so it costs the app nothing while it plays.
-private struct IconSwap: NSViewRepresentable {
-    let first: Icon
-    let second: Icon
-    let secondColour: NSColor
-
-    func makeNSView(context: Context) -> IconSwapView {
-        IconSwapView(first: first, second: second, secondColour: secondColour)
-    }
-
-    func updateNSView(_ view: IconSwapView, context: Context) {}
-}
-
-private final class IconSwapView: NSView {
-    private let first = CALayer()
-    private let second = CALayer()
-
-    init(first: Icon, second: Icon, secondColour: NSColor) {
-        super.init(frame: .zero)
-        wantsLayer = true
-        Self.paint(self.first, with: first, colour: NSColor(Theme.primary))
-        Self.paint(self.second, with: second, colour: secondColour)
-        self.second.opacity = 0
-        layer?.addSublayer(self.first)
-        layer?.addSublayer(self.second)
-    }
-
-    required init?(coder: NSCoder) { nil }
-
-    /// A layer of one colour, cut to the icon's shape.
-    private static func paint(_ layer: CALayer, with icon: Icon, colour: NSColor) {
-        let shape = CALayer()
-        shape.contents = icon.symbolImage(pointSize: 44)
-        shape.contentsGravity = .resizeAspect
-        layer.backgroundColor = colour.cgColor
-        layer.mask = shape
-    }
-
-    override func layout() {
-        super.layout()
-        for layer in [first, second] {
-            layer.frame = bounds
-            layer.mask?.frame = bounds
-        }
-    }
-
-    // Animations are dropped when a view leaves its window; start again
-    // whenever it is put in one.
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        guard window != nil else { return }
-        // Mostly the device; the bolt takes a short turn in each round. One
-        // shrinks away as the other grows into its place, so the change
-        // reads as one shape becoming the other.
-        first.add(Self.turn(opacity: [1, 1, 0, 0, 1], scale: [1, 1, 0.4, 0.4, 1]), forKey: "turn")
-        second.add(Self.turn(opacity: [0, 0, 1, 1, 0], scale: [0.4, 0.4, 1, 1, 0.4]), forKey: "turn")
-    }
-
-    private static func turn(opacity: [Float], scale: [Float]) -> CAAnimationGroup {
-        let times: [NSNumber] = [0, 0.52, 0.64, 0.86, 0.98]
-        // Each change eases in and out on its own.
-        let easing = Array(repeating: CAMediaTimingFunction(name: .easeInEaseOut), count: times.count - 1)
-        let fade = CAKeyframeAnimation(keyPath: "opacity")
-        fade.values = opacity
-        let size = CAKeyframeAnimation(keyPath: "transform.scale")
-        size.values = scale
-        for part in [fade, size] {
-            part.keyTimes = times
-            part.timingFunctions = easing
-        }
-        let turn = CAAnimationGroup()
-        turn.animations = [fade, size]
-        turn.duration = 7
-        turn.repeatCount = .infinity
-        return turn
-    }
-}
-

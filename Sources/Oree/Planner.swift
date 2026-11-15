@@ -127,6 +127,13 @@ final class CalendarFeed {
     private(set) var access = FeedAccess.unasked
     @ObservationIgnored private let store = EKEventStore()
 
+    /// The two weeks shown: from the first day of this week, fourteen days.
+    static var fortnight: [Date] {
+        let calendar = Calendar.current
+        let start = calendar.dateInterval(of: .weekOfYear, for: Date())?.start ?? calendar.startOfDay(for: Date())
+        return (0..<14).compactMap { calendar.date(byAdding: .day, value: $0, to: start) }
+    }
+
     init() {
         NotificationCenter.default.addObserver(
             forName: .EKEventStoreChanged, object: store, queue: .main
@@ -185,11 +192,21 @@ struct CalendarWidget: View {
                 Hint("Reading your calendar…")
             case .denied:
                 Hint("Allow Oree to see Calendars in System Settings, under Privacy & Security.")
-            case .granted where feed.events.isEmpty:
-                Hint("Nothing on today or tomorrow.")
             case .granted:
-                VStack(spacing: 2) {
-                    ForEach(feed.events) { event in
+                VStack(alignment: .leading, spacing: 8) {
+                    fortnight
+                    // A short rule between the days and what is on them.
+                    Rectangle()
+                        .fill(Theme.hairline)
+                        .frame(width: 120, height: 1)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 4)
+                    if feed.events.isEmpty {
+                        Text("Nothing on today or tomorrow.")
+                            .font(.callout)
+                            .foregroundStyle(Theme.secondary)
+                    }
+                    ForEach(feed.events.prefix(3)) { event in
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
                             RoundedRectangle(cornerRadius: 1.5)
                                 .fill(event.colour)
@@ -202,7 +219,50 @@ struct CalendarWidget: View {
                                 .foregroundStyle(Theme.secondary)
                                 .monospacedDigit()
                         }
-                        .padding(.vertical, 5)
+                        .padding(.vertical, 1)
+                    }
+                }
+            }
+        }
+        // A click anywhere on it opens Calendar.
+        .contentShape(Rectangle())
+        .onTapGesture {
+            NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Calendar.app"))
+        }
+        .help("Open Calendar")
+    }
+
+    /// Two weeks as a calendar does them: the days of the week across the
+    /// top, and today ringed with a dashed line.
+    private var fortnight: some View {
+        let calendar = Calendar.current
+        let days = CalendarFeed.fortnight
+        let letters = days.prefix(7).map { calendar.veryShortWeekdaySymbols[calendar.component(.weekday, from: $0) - 1] }
+        return Grid(horizontalSpacing: 0, verticalSpacing: 3) {
+            GridRow {
+                ForEach(Array(letters.enumerated()), id: \.offset) { _, letter in
+                    Text(letter)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(Theme.secondary)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            ForEach(0..<2, id: \.self) { week in
+                GridRow {
+                    ForEach(days[(week * 7)..<(week * 7 + 7)], id: \.self) { day in
+                        let today = calendar.isDateInToday(day)
+                        let past = day < calendar.startOfDay(for: Date())
+                        Text("\(calendar.component(.day, from: day))")
+                            .font(.caption.weight(today ? .semibold : .regular))
+                            .monospacedDigit()
+                            .foregroundStyle(today ? Theme.accent : past ? Theme.secondary : Theme.primary)
+                            .frame(width: 24, height: 19)
+                            .overlay {
+                                if today {
+                                    Capsule().strokeBorder(Theme.accent, style: StrokeStyle(lineWidth: 1.2, dash: [2.5, 2]))
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
                     }
                 }
             }

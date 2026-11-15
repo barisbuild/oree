@@ -138,12 +138,6 @@ extension Icon {
         case .checkCircle: "checkmark.circle"
         }
     }
-
-    /// The symbol as an image, for places that need one rather than a view.
-    func symbolImage(pointSize: CGFloat = 22) -> NSImage {
-        NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
-            .withSymbolConfiguration(.init(pointSize: pointSize, weight: .regular)) ?? image
-    }
 }
 
 struct IconView: View {
