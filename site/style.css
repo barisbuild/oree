@@ -60,7 +60,7 @@ canvas.picture { display: block; width: 100%; image-rendering: pixelated; }
 }
 
 .brand { display: inline-flex; align-items: center; gap: 9px; font-weight: 600; font-size: 17px; letter-spacing: -0.02em; }
-.mark { width: 18px; height: 18px; border: 3.5px solid var(--blue); border-radius: 50%; }
+.mark { width: 20px; height: 20px; background: url("mark.png") center / contain no-repeat; }
 .nav nav { display: flex; gap: 28px; font-size: 14.5px; color: var(--soft); }
 .nav nav a { transition: color 0.2s; }
 .nav nav a:hover { color: var(--ink); }

@@ -1,3 +1,5 @@
+<img src="docs/icon.png" width="96" alt="The Oree app icon: a glass ring over a blue sky">
+
 # Oree
 
 **Your desktop, put to work.** Oree takes the place of the macOS desktop: a

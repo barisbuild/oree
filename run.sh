@@ -4,7 +4,9 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APP="$ROOT/build/Oree.app"
+# Spotlight skips folders ending in .noindex, so this copy is never offered
+# as an app beside the installed one.
+APP="$ROOT/build.noindex/Oree.app"
 
 cd "$ROOT"
 # Use the native builder with its own cache to avoid the Swift Build
@@ -31,6 +33,8 @@ cat >"$APP/Contents/Library/LaunchAgents/space.oree.agent.plist" <<'AGENT'
 </plist>
 AGENT
 install -m 755 "$(swift build "${BUILD_ARGS[@]}" --show-bin-path)/Oree" "$APP/Contents/MacOS/Oree"
+mkdir -p "$APP/Contents/Resources"
+install -m 644 Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 cat >"$APP/Contents/Info.plist" <<'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -39,6 +43,7 @@ cat >"$APP/Contents/Info.plist" <<'EOF'
     <key>CFBundleExecutable</key><string>Oree</string>
     <key>CFBundleIdentifier</key><string>space.oree.app</string>
     <key>CFBundleName</key><string>Oree</string>
+    <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleShortVersionString</key><string>0.1.0</string>
     <key>LSMinimumSystemVersion</key><string>14.0</string>
@@ -72,7 +77,14 @@ codesign --force --sign "${IDENTITY:--}" --identifier space.oree.app "$APP" 2>/d
 # Oree runs from /Applications: the system will not keep a login item whose
 # app can move, and a build folder is no place for one.
 INSTALLED="/Applications/Oree.app"
+rm -rf "$INSTALLED"
 ditto "$APP" "$INSTALLED"
+# One Oree on the system: the copy in the build folder is not an app to
+# offer in Spotlight or Launchpad, and the installed one shows its new icon.
+LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+"$LSREGISTER" -u "$APP" >/dev/null 2>&1 || true
+"$LSREGISTER" -f "$INSTALLED" >/dev/null 2>&1 || true
+touch "$INSTALLED"
 if launchctl print "gui/$UID/space.oree.agent" >/dev/null 2>&1; then
   # Oree is the desktop: have the system start the new build.
   launchctl kickstart -k "gui/$UID/space.oree.agent"
