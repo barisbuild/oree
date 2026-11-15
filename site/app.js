@@ -47,19 +47,19 @@ const widgets = [
   },
   {
     key: "calendar", icon: "calendar", name: "Calendar", line: "Two weeks at a glance, and what is on today and tomorrow.",
-    html: `<h3>${icon("calendar")}Calendar<em>2</em></h3>${fortnight()}<hr class="rule">
+    html: `<h3>${icon("calendar")}Calendar</h3>${fortnight()}<hr class="rule">
       <ul class="rows events"><li><b style="--c:#ff9f0a"></b>Design review<i>10:30</i></li>
       <li><b style="--c:#6c93ff"></b>Lunch at the harbour<i>13:00</i></li></ul>`,
   },
   {
     key: "reminders", icon: "checklist", name: "Reminders", line: "What is still open. Tick one off, or add one with +.",
-    html: `<h3>${icon("checklist")}Reminders<em>3</em><a class="add" aria-hidden="true">${icon("plus")}</a></h3>
+    html: `<h3>${icon("checklist")}Reminders<a class="add" aria-hidden="true">${icon("plus")}</a></h3>
       <ul class="rows todo"><li><b></b>Renew the passport<i>18 Nov</i></li><li><b></b>Send the invoice<i>20 Nov</i></li>
       <li><b></b>Water the plants</li></ul>`,
   },
   {
     key: "mail", icon: "mail", name: "Mail", line: "The newest messages from every inbox.",
-    html: `<h3>${icon("mail")}Mail<em>2</em></h3>
+    html: `<h3>${icon("mail")}Mail</h3>
       <ul class="rows mail"><li class="unread">Your tickets for Friday<i>Box office</i><b></b></li>
       <li class="unread">Invoice 0142 is paid<i>Billing</i><b></b></li><li>Notes from Tuesday<i>Studio</i></li>
       <li>The week in type<i>Newsletter</i></li></ul>`,

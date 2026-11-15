@@ -145,7 +145,9 @@ h2 span { color: var(--blue); }
   transform: translate(-50%, -50%);
   color: var(--app-text);
 }
-.sw-desk > * { font-size: 0.82cqw; }
+/* Sized by the narrower of width and height, so the two rows of widgets
+   end above the fold on a wide, short window too. */
+.sw-desk > * { font-size: min(0.82cqw, 1.28vh); }
 
 .sw-photo { position: absolute; inset: 0 0 auto; height: 47%; opacity: var(--photo, 0); }
 /* Hidden where the header card covers it; shown on phones. */
