@@ -401,6 +401,8 @@ struct Widget<Content: View>: View {
     /// A link across from the title, and what it does.
     var link: String? = nil
     var follow: () -> Void = {}
+    /// Something quiet across from the title, such as where it comes from.
+    var accessory: AnyView? = nil
     @ViewBuilder let content: Content
 
     var body: some View {
@@ -413,6 +415,10 @@ struct Widget<Content: View>: View {
                 if let count, count > 0 {
                     Text("\(count)")
                         .foregroundStyle(Theme.secondary)
+                }
+                if let accessory {
+                    Spacer()
+                    accessory
                 }
                 if let link {
                     Spacer()

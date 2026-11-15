@@ -80,10 +80,13 @@ final class NowPlaying {
             if (argv[0] === "seek") {
                 ObjC.bindFunction("MRMediaRemoteSetElapsedTime", ["void", ["double"]]);
                 $.MRMediaRemoteSetElapsedTime(parseFloat(argv[1]));
-                return;
+            } else {
+                ObjC.bindFunction("MRMediaRemoteSendCommand", ["bool", ["int", "id"]]);
+                $.MRMediaRemoteSendCommand(parseInt(argv[0]), $());
             }
-            ObjC.bindFunction("MRMediaRemoteSendCommand", ["bool", ["int", "id"]]);
-            $.MRMediaRemoteSendCommand(parseInt(argv[0]), $());
+            // The command goes out on a queue of its own: stay long enough
+            // for it to leave, or it dies with the script.
+            delay(0.4);
         }
         """
 
@@ -211,6 +214,14 @@ final class NowPlaying {
         return min(duration, max(0, elapsed + moved))
     }
 
+    /// Bring the app that is playing to the front.
+    func openSource() {
+        guard !sourceBundle.isEmpty,
+              let app = NSWorkspace.shared.urlForApplication(withBundleIdentifier: sourceBundle)
+        else { return }
+        NSWorkspace.shared.open(app)
+    }
+
     /// Move the playing item to a point, in seconds.
     func seek(to seconds: Double) {
         elapsed = seconds
@@ -240,7 +251,10 @@ struct NowPlayingWidget: View {
     private static let coverSize: CGFloat = 132
 
     var body: some View {
-        Widget(title: "Now playing", icon: .music, count: nil, height: widgetHeight) {
+        Widget(
+            title: "Now playing", icon: .music, count: nil, height: widgetHeight,
+            accessory: playing.hasTrack ? AnyView(source) : nil
+        ) {
             if playing.hasTrack {
                 // A large cover, and beside it, hanging from its top edge,
                 // the title, who it is by and where it plays; the controls
@@ -248,7 +262,6 @@ struct NowPlayingWidget: View {
                 HStack(alignment: .top, spacing: 14) {
                     cover
                     VStack(alignment: .leading, spacing: 3) {
-                        source
                         Text(playing.title)
                             .font(.callout.weight(.semibold))
                             .lineLimit(2)
@@ -262,12 +275,16 @@ struct NowPlayingWidget: View {
                         if playing.duration > 0 {
                             Progress(playing: playing)
                         }
-                        HStack(spacing: 2) {
-                            control("backward.fill", help: "Previous", action: playing.previous)
-                            playButton
-                            control("forward.fill", help: "Next", action: playing.next)
+                        // As Apple draws them: bare symbols, the middle one larger.
+                        HStack(spacing: 0) {
+                            control("backward.fill", size: 17, help: "Previous", action: playing.previous)
+                            Spacer(minLength: 0)
+                            control(playing.isPlaying ? "pause.fill" : "play.fill", size: 24,
+                                    help: playing.isPlaying ? "Pause" : "Play", action: playing.toggle)
+                            Spacer(minLength: 0)
+                            control("forward.fill", size: 17, help: "Next", action: playing.next)
                         }
-                        .padding(.leading, -8)
+                        .padding(.horizontal, -6)
                     }
                     .frame(maxWidth: .infinity, maxHeight: Self.coverSize, alignment: .leading)
                 }
@@ -291,23 +308,17 @@ struct NowPlayingWidget: View {
         }
     }
 
-    /// The app it plays in, and while it plays, a few bars moving.
+    /// The app it plays in, across from the title: its icon alone.
+    @ViewBuilder
     private var source: some View {
-        HStack(spacing: 5) {
-            if let icon = playing.sourceIcon {
+        if let icon = playing.sourceIcon {
+            Button(action: playing.openSource) {
                 Image(nsImage: icon)
                     .resizable()
-                    .frame(width: 13, height: 13)
+                    .frame(width: 16, height: 16)
             }
-            if !playing.source.isEmpty {
-                Text(playing.source)
-                    .font(.caption)
-                    .foregroundStyle(Theme.secondary)
-                    .lineLimit(1)
-            }
-            if playing.isPlaying {
-                Bars()
-            }
+            .buttonStyle(.plain)
+            .help("Open \(playing.source)")
         }
     }
 
@@ -334,51 +345,17 @@ struct NowPlayingWidget: View {
         .shadow(color: .black.opacity(0.12), radius: 8, y: 4)
     }
 
-    private var playButton: some View {
-        Button(action: playing.toggle) {
-            Image(systemName: playing.isPlaying ? "pause.fill" : "play.fill")
-                .font(.system(size: 16))
-                .foregroundStyle(.white)
-                .frame(width: 40, height: 40)
-                .background(Theme.accent, in: Circle())
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .help(playing.isPlaying ? "Pause" : "Play")
-    }
-
-    private func control(_ symbol: String, help: String, action: @escaping () -> Void) -> some View {
+    private func control(_ symbol: String, size: CGFloat, help: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 15))
+                .font(.system(size: size))
                 .foregroundStyle(Theme.primary)
+                .contentTransition(.symbolEffect(.replace))
                 .frame(width: 36, height: 36)
-                .contentShape(Circle())
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help(help)
-    }
-}
-
-/// Three bars rising and falling, a few times a second: cheap enough to
-/// leave running while something plays.
-private struct Bars: View {
-    @Environment(\.accessibilityReduceMotion) private var still
-
-    var body: some View {
-        TimelineView(.periodic(from: .now, by: 0.2)) { context in
-            let tick = Int(context.date.timeIntervalSinceReferenceDate * 5)
-            HStack(alignment: .bottom, spacing: 1.5) {
-                ForEach(0..<3, id: \.self) { bar in
-                    let height = still ? 6 : [4.0, 9, 6, 10, 5, 8, 3, 7][(tick + bar * 3) % 8]
-                    Capsule()
-                        .fill(Theme.accent)
-                        .frame(width: 2, height: height)
-                        .animation(.easeInOut(duration: 0.2), value: height)
-                }
-            }
-            .frame(height: 10, alignment: .bottom)
-        }
     }
 }
 
