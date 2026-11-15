@@ -12,6 +12,14 @@ import SwiftUI
 final class NowPlaying {
     private(set) var title = ""
     private(set) var artist = ""
+    private(set) var album = ""
+    /// How long the item runs, in seconds; zero when the app does not say.
+    private(set) var duration: Double = 0
+    /// How far in it was when last read, and when that was.
+    @ObservationIgnored private var elapsed: Double = 0
+    @ObservationIgnored private var readAt = Date()
+    /// The store item a cover was last looked up for.
+    @ObservationIgnored private var lookedUp = ""
     /// The app the media is playing in.
     private(set) var source = ""
     private(set) var isPlaying = false
@@ -52,18 +60,28 @@ final class NowPlaying {
                 if (!art.isNil()) art.writeToFileAtomically(argv[0], true);
             }
             var client = request.localNowPlayingPlayerPath.client;
+            var stamp = info.valueForKey("kMRMediaRemoteNowPlayingInfoTimestamp");
             return JSON.stringify({
-                title: text("Title"), artist: text("Artist"), rate: text("PlaybackRate"),
+                title: text("Title"), artist: text("Artist"), album: text("Album"), rate: text("PlaybackRate"),
+                elapsed: text("ElapsedTime"), duration: text("Duration"),
+                store: text("AlbumiTunesStoreAdamIdentifier") || text("iTunesStoreSubscriptionAdamIdentifier") || text("iTunesStoreIdentifier"),
+                stamp: stamp.isNil() ? "" : String(stamp.timeIntervalSince1970),
                 app: client.isNil() ? "" : ObjC.unwrap(client.displayName),
                 bundle: client.isNil() ? "" : ObjC.unwrap(client.bundleIdentifier)
             });
         }
         """
 
-    /// Sends one of the system's media commands, by number.
+    /// Sends one of the system's media commands, by number; or, given
+    /// "seek" and a number of seconds, moves the playing item there.
     private static let sendScript = """
         function run(argv) {
             \(prelude)
+            if (argv[0] === "seek") {
+                ObjC.bindFunction("MRMediaRemoteSetElapsedTime", ["void", ["double"]]);
+                $.MRMediaRemoteSetElapsedTime(parseFloat(argv[1]));
+                return;
+            }
             ObjC.bindFunction("MRMediaRemoteSendCommand", ["bool", ["int", "id"]]);
             $.MRMediaRemoteSendCommand(parseInt(argv[0]), $());
         }
@@ -73,6 +91,10 @@ final class NowPlaying {
         if Demo.on {
             title = "Low Tide"
             artist = "Halden"
+            album = "Shorelines"
+            duration = 214
+            elapsed = 61
+            readAt = Date()
             source = "Music"
             isPlaying = true
             sourceIcon = NSWorkspace.shared.icon(forFile: "/System/Applications/Music.app")
@@ -109,6 +131,8 @@ final class NowPlaying {
         guard let item, let title = item["title"], !title.isEmpty else {
             self.title = ""
             artist = ""
+            album = ""
+            duration = 0
             source = ""
             isPlaying = false
             artwork = nil
@@ -117,7 +141,11 @@ final class NowPlaying {
         let changed = title != self.title
         self.title = title
         artist = item["artist"] ?? ""
+        album = item["album"] ?? ""
         source = item["app"] ?? ""
+        duration = Double(item["duration"] ?? "") ?? 0
+        elapsed = Double(item["elapsed"] ?? "") ?? 0
+        readAt = Double(item["stamp"] ?? "").map { Date(timeIntervalSince1970: $0) } ?? Date()
         if let bundle = item["bundle"], bundle != sourceBundle {
             sourceBundle = bundle
             sourceIcon = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundle)
@@ -126,6 +154,12 @@ final class NowPlaying {
         isPlaying = (Double(item["rate"] ?? "") ?? 0) > 0
         if coverWasRead {
             artwork = cover
+            // Apple Music sends no cover of its own, only the item's number
+            // in its store: the store's public lookup has the picture.
+            if cover == nil, let store = item["store"], !store.isEmpty, store != lookedUp {
+                lookedUp = store
+                lookUpCover(store)
+            }
         } else if changed {
             // A new item: its cover is worth a second, fuller read.
             artwork = nil
@@ -147,11 +181,47 @@ final class NowPlaying {
         }
     }
 
+    private func lookUpCover(_ store: String) {
+        Task.detached(priority: .utility) {
+            guard let lookup = URL(string: "https://itunes.apple.com/lookup?id=\(store)"),
+                  let (data, _) = try? await URLSession.shared.data(from: lookup),
+                  let reply = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let small = (reply["results"] as? [[String: Any]])?.first?["artworkUrl100"] as? String,
+                  let large = URL(string: small.replacingOccurrences(of: "100x100bb", with: "600x600bb")),
+                  let (picture, _) = try? await URLSession.shared.data(from: large),
+                  let image = NSImage(data: picture)
+            else { return }
+            await MainActor.run {
+                // Still the same item: set its cover.
+                if self.lookedUp == store { self.artwork = image }
+            }
+        }
+    }
+
     func toggle() {
         if Demo.on { isPlaying.toggle(); return }
         send(2)
     }
     func next() { send(4) }
+
+    /// How far into the item it is now, reckoned from the last reading.
+    func position(at date: Date) -> Double {
+        guard duration > 0 else { return 0 }
+        let moved = isPlaying ? date.timeIntervalSince(readAt) : 0
+        return min(duration, max(0, elapsed + moved))
+    }
+
+    /// Move the playing item to a point, in seconds.
+    func seek(to seconds: Double) {
+        elapsed = seconds
+        readAt = Date()
+        if Demo.on { return }
+        Task.detached(priority: .userInitiated) {
+            _ = Shell.output("/usr/bin/osascript", ["-l", "JavaScript", Self.sender.path, "seek", String(seconds)])
+            try? await Task.sleep(for: .milliseconds(350))
+            await MainActor.run { self.read() }
+        }
+    }
     func previous() { send(5) }
 
     private func send(_ command: Int) {
@@ -182,13 +252,16 @@ struct NowPlayingWidget: View {
                         Text(playing.title)
                             .font(.callout.weight(.semibold))
                             .lineLimit(2)
-                        if !playing.artist.isEmpty {
-                            Text(playing.artist)
+                        if !playing.artist.isEmpty || !playing.album.isEmpty {
+                            Text([playing.artist, playing.album].filter { !$0.isEmpty }.joined(separator: " — "))
                                 .font(.callout)
                                 .foregroundStyle(Theme.secondary)
                                 .lineLimit(1)
                         }
                         Spacer(minLength: 6)
+                        if playing.duration > 0 {
+                            Progress(playing: playing)
+                        }
                         HStack(spacing: 2) {
                             control("backward.fill", help: "Previous", action: playing.previous)
                             playButton
@@ -306,5 +379,55 @@ private struct Bars: View {
             }
             .frame(height: 10, alignment: .bottom)
         }
+    }
+}
+
+/// How far through the item is, as a thin bar with the time on either
+/// side; dragged, it moves the item to that point.
+private struct Progress: View {
+    let playing: NowPlaying
+    /// Where the hand has it while dragging, 0 to 1.
+    @State private var dragging: Double?
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: playing.isPlaying ? 0.5 : 60)) { context in
+            let share = dragging ?? playing.position(at: context.date) / playing.duration
+            VStack(spacing: 3) {
+                GeometryReader { bar in
+                    Capsule()
+                        .fill(Theme.panel)
+                        .overlay(alignment: .leading) {
+                            Capsule()
+                                .fill(Theme.secondary)
+                                .frame(width: max(4, bar.size.width * share))
+                        }
+                        .frame(height: dragging == nil ? 4 : 6)
+                        .frame(maxHeight: .infinity)
+                        .contentShape(Rectangle())
+                        .gesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged { drag in dragging = min(1, max(0, drag.location.x / bar.size.width)) }
+                                .onEnded { _ in
+                                    if let dragging { playing.seek(to: dragging * playing.duration) }
+                                    dragging = nil
+                                }
+                        )
+                }
+                .frame(height: 10)
+                HStack {
+                    Text(Self.clock(share * playing.duration))
+                    Spacer()
+                    Text("-" + Self.clock((1 - share) * playing.duration))
+                }
+                .font(.system(size: 9.5).monospacedDigit())
+                .foregroundStyle(Theme.secondary)
+            }
+            .animation(.smooth(duration: 0.15), value: dragging == nil)
+        }
+    }
+
+    private static func clock(_ seconds: Double) -> String {
+        let whole = Int(seconds.rounded())
+        return String(format: "%d:%02d", whole / 60, whole % 60)
     }
 }
