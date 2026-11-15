@@ -70,7 +70,7 @@ const widgets = [
       <div class="playing"><span class="cover"></span><div>
       <strong>Deep End</strong><small>Lune Varela — Night Swims</small>
       <span class="progress"><span class="bar"><i></i></span><span class="times"><i>1:25</i><i>-2:09</i></span></span>
-      <span class="controls"><i>${icon("back")}</i><b>${icon("pause")}</b><i>${icon("forward")}</i></span></div></div>`,
+      <span class="controls"><i>${icon("mediaBack")}</i><b>${icon("mediaPause")}</b><i>${icon("mediaForward")}</i></span></div></div>`,
   },
   {
     key: "weather", icon: "sunCloud", name: "Weather", line: "Now, and the next four days, where you are.",
