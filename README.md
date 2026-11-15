@@ -13,17 +13,18 @@ all day laid out underneath.
 | | |
 | --- | --- |
 | **Files** | Your Desktop and pinned folders, opened in place. Pick icons the way you do in Finder: click, Command-click, or drag a rectangle anywhere on the desktop. Drag to reorder, drop into folders, drag out to other apps. Stacks by kind, search, rename, compress. |
-| **Calendar** | Today and tomorrow, in your calendars' colours. |
-| **Reminders** | What is still open, soonest first. Tick one off from the desktop. |
+| **Calendar** | Two weeks at a glance with today ringed, and what is on today and tomorrow. A click opens Calendar. |
+| **Reminders** | What is still open, soonest first. Tick one off, or press + to jot a new one down. |
 | **Mail** | The newest messages across every inbox in Mail, Gmail's included. |
-| **Now playing** | Whatever is playing in any app, with previous, play and next. |
+| **Now playing** | Whatever is playing in any app: cover, progress you can drag, previous, play and next. |
 | **Weather** | Now, and the next four days, where you are. |
-| **Batteries** | This Mac, your earbuds and their case, keyboards and mice. |
-| **Focus** | A 25-minute timer with a 5-minute break. One button. |
+| **Batteries** | Every device the Mac tracks the power of, four at a time, charging shown as the system shows it. |
+| **Focus** | A timer on a minute ruler: drag it to set the length, then press play. |
 
 The picture is any image you choose. It is printed as a grid of dots and
-dissolves into the desktop below it, so the picture and the widgets read as
-one surface. Until you choose one, Oree follows your system wallpaper.
+either dissolves into the desktop below it or, in Settings, fills the whole
+screen with the widgets as glass over it. Until you choose one, Oree follows
+your system wallpaper.
 
 ## The assistant
 
@@ -43,7 +44,12 @@ agents you already have, signed in with your own account:
 Both agents ask before they change anything, and Oree shows you the
 question with Allow and Don't allow. Claude Code asks before a command or an
 edit; Codex runs in a read-only sandbox and asks before any command or change
-that would write.
+that would write. If you would rather they did not ask, "Bypass permissions"
+under the box lets them act on their own, once you have accepted the risk.
+
+Conversations are kept between launches, in
+`~/Library/Application Support/Oree`, and an agent picks one up where it left
+off.
 
 ## Build and run
 

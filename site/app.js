@@ -29,6 +29,15 @@ function drawIcons(root = document) {
 // ---- The eight widgets, written once and shown twice: small on the Mac's
 // screen, and one at a time further down.
 
+function fortnight() {
+  const today = new Date();
+  const start = new Date(today);
+  start.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  const days = Array.from({ length: 14 }, (_, n) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + n));
+  const cell = (day) => `<i class="${day.toDateString() === today.toDateString() ? "today" : day < today ? "past" : ""}">${day.getDate()}</i>`;
+  return `<div class="fortnight">${["M", "T", "W", "T", "F", "S", "S"].map((letter) => `<b>${letter}</b>`).join("")}${days.map(cell).join("")}</div>`;
+}
+
 const widgets = [
   {
     key: "files", icon: "folder", name: "Files", line: "Your Desktop and pinned folders, opened in place.",
@@ -37,30 +46,30 @@ const widgets = [
       <li><b class="fold"></b>Downloads<i>14</i></li><li><b class="fold"></b>Pictures<i>6</i></li></ul>`,
   },
   {
-    key: "calendar", icon: "calendar", name: "Calendar", line: "Today and tomorrow, in your calendars' colours.",
-    html: `<h3>${icon("calendar")}Calendar<em>3</em></h3>
+    key: "calendar", icon: "calendar", name: "Calendar", line: "Two weeks at a glance, and what is on today and tomorrow.",
+    html: `<h3>${icon("calendar")}Calendar<em>2</em></h3>${fortnight()}<hr class="rule">
       <ul class="rows events"><li><b style="--c:#ff9f0a"></b>Design review<i>10:30</i></li>
-      <li><b style="--c:#6c93ff"></b>Lunch at the harbour<i>13:00</i></li>
-      <li><b style="--c:#30d158"></b>Flight to Lisbon<i>Tomorrow · 07:15</i></li></ul>`,
+      <li><b style="--c:#6c93ff"></b>Lunch at the harbour<i>13:00</i></li></ul>`,
   },
   {
-    key: "reminders", icon: "checklist", name: "Reminders", line: "What is still open. Tick one off right here.",
-    html: `<h3>${icon("checklist")}Reminders<em>3</em></h3>
+    key: "reminders", icon: "checklist", name: "Reminders", line: "What is still open. Tick one off, or add one with +.",
+    html: `<h3>${icon("checklist")}Reminders<em>3</em><a class="add" aria-hidden="true">${icon("plus")}</a></h3>
       <ul class="rows todo"><li><b></b>Renew the passport<i>18 Nov</i></li><li><b></b>Send the invoice<i>20 Nov</i></li>
       <li><b></b>Water the plants</li></ul>`,
   },
   {
     key: "mail", icon: "mail", name: "Mail", line: "The newest messages from every inbox.",
     html: `<h3>${icon("mail")}Mail<em>2</em></h3>
-      <ul class="rows mail"><li class="unread"><b></b>Your tickets for Friday<i>Box office</i></li>
-      <li class="unread"><b></b>Invoice 0142 is paid<i>Billing</i></li><li><b></b>Notes from Tuesday<i>Studio</i></li>
-      <li><b></b>The week in type<i>Newsletter</i></li></ul>`,
+      <ul class="rows mail"><li class="unread">Your tickets for Friday<i>Box office</i><b></b></li>
+      <li class="unread">Invoice 0142 is paid<i>Billing</i><b></b></li><li>Notes from Tuesday<i>Studio</i></li>
+      <li>The week in type<i>Newsletter</i></li></ul>`,
   },
   {
-    key: "playing", icon: "music", name: "Now playing", line: "Whatever is playing in any app, with controls.",
-    html: `<h3>${icon("music")}Now playing</h3>
-      <div class="playing"><span class="cover"></span><div><span class="src"><i class="app"></i>Music<span class="eq"><i></i><i></i><i></i></span></span>
-      <strong>Low Tide</strong><small>Halden</small>
+    key: "playing", icon: "music", name: "Now playing", line: "Whatever is playing in any app: cover, progress and controls.",
+    html: `<h3>${icon("music")}Now playing<span class="app" aria-hidden="true">${icon("music")}</span></h3>
+      <div class="playing"><span class="cover"></span><div>
+      <strong>Low Tide</strong><small>Halden — Shorelines</small>
+      <span class="progress"><span class="bar"><i></i></span><span class="times"><i>1:25</i><i>-2:09</i></span></span>
       <span class="controls"><i>${icon("back")}</i><b>${icon("pause")}</b><i>${icon("forward")}</i></span></div></div>`,
   },
   {
@@ -72,9 +81,9 @@ const widgets = [
       <li>Mon${icon("rain")}<i><b>19°</b> 13°</i></li><li>Tue${icon("cloud")}<i><b>18°</b> 12°</i></li></ol></div>`,
   },
   {
-    key: "batteries", icon: "battery", name: "Batteries", line: "This Mac, your earbuds and their case, your keyboard.",
+    key: "batteries", icon: "battery", name: "Batteries", line: "Every device your Mac tracks, charging shown as macOS shows it.",
     html: `<h3>${icon("battery")}Batteries</h3>
-      <div class="rings"><span class="ring charging" style="--level:71">${icon("laptop")}${icon("bolt")}</span>
+      <div class="rings"><span class="ring charging" style="--level:71">${icon("laptop")}<i class="bolt">${icon("bolt")}</i></span>
       <span class="ring" style="--level:92">${icon("earbuds")}</span><span class="ring" style="--level:64">${icon("earbudsCase")}</span>
       <span class="ring" style="--level:38">${icon("keyboard")}</span></div>`,
   },
